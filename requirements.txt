@@ -1,0 +1,3 @@
+pywikibot==2.0rc5
+requests==2.11.1
+simplejson==3.10.0

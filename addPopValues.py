@@ -1,6 +1,6 @@
 #!/usr/bin/python3.5
 
-import pywikibot, json, pprint, os
+import pywikibot, json, os
 from pywikibot.data import api
 
 
