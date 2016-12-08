@@ -1,13 +1,13 @@
 # census-wikidata-bot
 
-![U.S. Census Bureau logo](https://www.census.gov/popclock/images/census-logo-whiteBG.png)
+![U.S. Census Bureau logo](https://upload.wikimedia.org/wikipedia/commons/8/85/Seal_of_the_United_States_Census_Bureau.svg)
 
 This project contains code for a bot.  This bot is made to interact with [Wikidata] (https://www.wikidata.org/wiki/Wikidata:Main_Page).  This bot is designed to use Census data specifically and push it to wikidata if a page exists for the subject matter.
 
 ## Setup
 In order to set up this bot to run, a wikidata account with a bot flag approval is necessary.  This bot uses python 3.5 and the main library for interaction with the Wikidata API is [Pywikibot] (https://www.mediawiki.org/wiki/Manual:Pywikibot).  The configuration file for this bot is contained in *user-config.py*.
 
-In the this file, insert your user account in the following line:
+In the this file, insert your user account in the following line:<br>
 `usernames['sitename']['en'] = u'ExampleBot'`
 
 The `mylang` and `family` parameters will also need to be set accordingly.  Please refer to the documentation for Pywikibot for additional information regarding this.
