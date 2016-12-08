@@ -1,7 +1,6 @@
 #!/usr/bin/python3.5
 
 import pywikibot, json, os
-from collections import OrderedDict
 from pywikibot.data import api
 
 
