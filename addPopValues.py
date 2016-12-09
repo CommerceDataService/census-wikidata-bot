@@ -1,15 +1,20 @@
 #!/usr/bin/python3.5
 
-import pywikibot, json, os
+import pywikibot, json, os, requests
 from pywikibot.data import api
 
 
-def get_census_values(fname):
-    with open(fname) as data_file:
-        data = json.load(data_file)
-        return data
+def get_census_values():
+    try:
+        payload = {'get': 'POP,GEONAME','for': 'state:*'}
+        url = api_url
+        r = requests.get(api_url, params = payload)
+        return r.json()
+    except requests.exceptions.RequestException as e:
+        print(e)
+        sys.exit(1)
 
-def get_items(site, item_title):
+def find_wiki_items(site, item_title):
     params = {'action': 'wbsearchentities',
               'format': 'json',
               'language': 'en',
@@ -128,6 +133,7 @@ if __name__ == '__main__':
     mode = 'test'
     site = pywikibot.Site(mode, 'wikidata')
     repo = site.data_repository()
+    api_url = 'http://api.census.gov/data/2015/pep/population'
     ref_url = 'http://www.census.gov/data/developers/data-sets/popest-popproj/popest.html'
     claim_add_summary = 'Adding 2015 state population claim'
 
@@ -145,15 +151,14 @@ if __name__ == '__main__':
         #references - ref url, stated in
         references = {'P248': 'Q463769', 'P854': ref_url}
 
-    fname = os.path.join(scriptpath, 'fixtures', '2015_state_population.json')
-    pop_values = get_census_values(fname)
+    pop_values = get_census_values()
 
     for val in pop_values[1:]:
         key = val[1].split(',')[0]+', United States'
         print('State: ' + key)
         pop_val = int(val[0])
         print('Pop Val: ' + str(pop_val))
-        search_results = get_items(site, key)
+        search_results = find_wiki_items(site, key)
         #if only single search result
         num_of_results = len(search_results['search'])
         if num_of_results == 1:
