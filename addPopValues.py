@@ -25,52 +25,44 @@ def find_wiki_items(site, item_title):
 
 def check_claim(claim, val):
     try:
-        claim_matches, remove_claim, add_claim = False, False, False
+        #0 - claim matches
+        #1 - remove claim
+        #2 - remove claim and add new claim
+        claim_status = 0
         p_in_time = qualifiers[0][0]
         det_method = qualifiers[1][0]
         if p_in_time in claim.qualifiers:
             if claim.qualifiers[p_in_time][0].getTarget().year == qualifiers[0][1][1]:
                 if claim.getTarget().amount == val:
                     if det_method in claim.qualifiers:
-                        if claim.qualifiers[det_method][0].getTarget().id == qualifiers[1][1][1]:
-                            claim_matches = True
-                        else:
+                        if claim.qualifiers[det_method][0].getTarget().id != qualifiers[1][1][1]:
                             print('Qualifier {} value incorrect'.format(qualifiers[1][0]))
-                            remove_claim = True
-                            add_claim = True
+                            claim_status = 2
                     else:
                         print('Qualifier determination method missing')
-                        remove_claim = True
-                        add_claim = True
+                        claim_status = 2
                 else:
                     print('Statement claim value incorrect')
-                    remove_claim = True
-                    add_claim = True
+                    claim_status = 2
         else:
             print('Qualifier point in time missing')
-            remove_claim = True
-        claim_status = (claim_matches, remove_claim, add_claim)
-        print('claim_matches: {},remove_claim: {},add_claim: {}'\
-        .format(claim_status[0], claim_status[1], claim_status[2]))
+            claim_status = 1
+        print('Status of Claim: {}'.format(claim_status))
         return claim_status
     except:
         raise
 
-def check_source_set(claim):
+def check_references(claim):
     source_claims = claim.getSources()
-    print('length of source_claim: {}'.format(len(source_claims)))
     if len(source_claims) != 1:
-        print('Not 1 item')
+        print('Incorrect number of references')
         return False
     else:
-        print('source_claims: {}'.format(source_claims))
-        print(len(source_claims[0]))
         if len(source_claims[0]) != 2:
-            print('Not 2 items in reference')
+            print('Incorrect number of items in reference')
             return False
         else:
             for k, v in source_claims[0].items():
-                print('key: {}, val: {}'.format(k,v))
                 if k in references:
                     prop_type = references[k][0]
                     source_val = None
@@ -78,21 +70,18 @@ def check_source_set(claim):
                         source_val = v[0].getTarget().id
                     elif prop_type == 'url':
                         source_val = v[0].getTarget()
-                    print('source_val: {}'.format(source_val))
                     if source_val != references[k][1]:
-                        print('False')
+                        print('Value incorrect for key: {}'.format(k))
                         return False
                 else:
-                    print('False')
+                    print('Wrong item contained in reference')
                     return False
-    print('True')
     return True
 
-def create_source_claim(claim):
+def create_references(claim):
     try:
         source_claim_list = []
         for k, v in references.items():
-            print('Reference: {}'.format(k))
             source_claim = pywikibot.Claim(repo, k, isReference=True)
             trgt_item = None
             if v[0] == 'id':
@@ -115,14 +104,12 @@ def remove_claim(item, claim, prop):
         return False
 
 def create_claim(item, prop, prop_val):
-    print('Adding new claim')
-    claim = pywikibot.Claim(repo, prop)
+    newclaim = pywikibot.Claim(repo, prop)
     wb_quant = pywikibot.WbQuantity(prop_val)
-    claim.setTarget(wb_quant)
+    newclaim.setTarget(wb_quant)
     #need to change to True once flag is received
-    item.addClaim(claim, bot = False, summary = claim_add_summary)
-    print('New claim added')
-    return claim
+    item.addClaim(newclaim, bot = False, summary = claim_add_summary)
+    return newclaim
 
 def create_qualifier_claim(claim):
     for q in qualifiers:
@@ -132,9 +119,17 @@ def create_qualifier_claim(claim):
         elif q[1][0] == 'item':
             trgt_item = pywikibot.ItemPage(repo, q[1][1])
         qualifier.setTarget(trgt_item)
-        newclaim.addQualifier(qualifier)
-        print('Qualifier: {}'.format(q[1][0]))
+        claim.addQualifier(qualifier)
     return True
+
+def add_full_claim():
+    try:
+        newclaim = create_claim(item, p_population, pop_val)
+        create_qualifier_claim(newclaim)
+        create_references(newclaim)
+        print('New claim added')
+    except:
+        raise
 
 if __name__ == '__main__':
     scriptpath = os.path.dirname(os.path.abspath(__file__))
@@ -145,7 +140,6 @@ if __name__ == '__main__':
     ref_url = 'http://www.census.gov/data/developers/data-sets/popest-popproj/popest.html'
     claim_add_summary = 'Adding 2015 state population claim'
 
-    #test values
     #qualifiers - point in time, determination method
     #references - ref url, stated in
     if mode == 'test':
@@ -161,7 +155,7 @@ if __name__ == '__main__':
     for val in pop_values[1:]:
         key = val[1].split(',')[0]+', United States'
         pop_val = int(val[0])
-        print('State: {}, Pop Val: {}'.format(key, pop_val))
+        print('State: {} - {}'.format(key, pop_val))
         search_results = find_wiki_items(site, key)
         #if only single search result
         num_of_results = len(search_results['search'])
@@ -175,30 +169,22 @@ if __name__ == '__main__':
                 if len(claims) > 0:
                     for claim in claims:
                         claim_status = check_claim(claim, pop_val)
-                        if claim_status[0]:
-                            print('check sources')
-                            source = check_source_set(claim)
-                            if source:
-                                claim_present = True
-                            else:
+                        if claim_status == 0:
+                            source = check_references(claim)
+                            if not source:
                                 remove_claim(item, claim, p_population)
-                                add_claim = True
-                        elif claim_status[1]:
-                            if claim_status[2]:
-                                remove_claim(item, claim, p_population)
-                                add_claim = True
-                            else:
-                                remove_claim(item, claim, p_population)
+                                add_full_claim()
+                        elif claim_status == 1:
+                            remove_claim(item, claim, p_population)
+                        elif claim_status == 2:
+                            remove_claim(item, claim, p_population)
+                            add_full_claim()
                 else:
-                    add_claim = True
+                    print('no claims present')
+                    add_full_claim()
             else:
-                add_claim = True
-            if add_claim or not claim_present:
-                newclaim = create_claim(item, p_population, pop_val)
-                create_qualifier_claim(newclaim)
-                create_source_claim(newclaim)
-            else:
-                print('no claim has been added')
+                print('statement not present')
+                add_full_claim()
         elif num_of_results == 0:
             print('0 wiki items found')
         elif num_of_results > 1:
