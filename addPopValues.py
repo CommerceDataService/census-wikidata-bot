@@ -1,5 +1,11 @@
 #!/usr/bin/python3.5
 
+#Author:        Sasan Bahadaran
+#Date:          12/16/16
+#Organization:  Commerce Data Service
+#Description:   This is a bot script for getting Census data from the Census
+#Bureau API's and writing it to Wikidata.
+
 import pywikibot, json, os, requests
 from pywikibot.data import api
 
