@@ -37,8 +37,9 @@ def check_claim(claim, val):
         claim_status = 0
         p_in_time = qualifiers[0][0]
         det_method = qualifiers[1][0]
-        print('Year: {}, Value: {}'.format(claim.qualifiers[p_in_time][0].getTarget().year,claim.getTarget().amount))
+        print('Entry Value: {}'.format(claim.getTarget().amount))
         if p_in_time in claim.qualifiers:
+            print('Entry Year: {}'.format(claim.qualifiers[p_in_time][0].getTarget().year))
             if claim.qualifiers[p_in_time][0].getTarget().year == qualifiers[0][1][1]:
                 if claim.getTarget().amount == val:
                     if det_method in claim.qualifiers:
