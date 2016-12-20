@@ -159,7 +159,6 @@ if __name__ == '__main__':
     if mode == 'test':
         p_population = 'P63'
         qualifiers = [('P66',['time', 2015]), ('P144', ['item', 'Q35384'])]
-        #references = {'P149': ['id', 'Q36945'], 'P93': ['url', ref_url]}
         references = {'P93': ['url', ref_url], 'P149': ['id', 'Q36945']}
     elif mode == 'wikidata':
         p_population = 'P1082'
