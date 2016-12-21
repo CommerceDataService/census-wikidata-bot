@@ -1,0 +1,20 @@
+#JSON file for data structures
+[
+    {
+        "api_url": "http://api.census.gov/data/2015/pep/population",
+        "P63": {
+            "qualfiers": [
+                              [
+                                  "P66",["time", 2015]
+                              ],
+                              [
+                                  "P144", ["item", "Q32616"]
+                              ]
+            ],
+            "references": {
+                              "P149": ["id", "Q32615"],
+                              "P93": ["url", "http://www.census.gov/data/developers/data-sets/popest-popproj/popest.html"]
+            }
+        }
+    }
+]
