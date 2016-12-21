@@ -1,0 +1,21 @@
+[
+    {
+        "api_url": "http://api.census.gov/data/2015/pep/population",
+        "P1082": {
+                      "qualifiers": [
+                                        [
+                                            "P585",
+                                            ["time", 2015]
+                                        ],
+                                        [
+                                            "P459",
+                                            ["item", "Q637413"]
+                                        ]
+                      ],
+                      "references": {
+                                        "P248": ["id", "Q463769"],
+                                        "P854": ["url", "http://www.census.gov/data/developers/data-sets/popest-popproj/popest.html"]
+                      }
+        }
+    }
+]
