@@ -1,6 +1,6 @@
 #!/usr/bin/python3.5
 
-import pywikibot, json, os, requests
+import pywikibot, json, os, requests, argparse, logging, time
 from pywikibot.data import api
 
 
@@ -11,7 +11,7 @@ def get_census_values():
         r = requests.get(api_url, params = payload)
         return r.json()
     except requests.exceptions.RequestException as e:
-        print(e)
+        logging.error(e)
         sys.exit(1)
 
 def find_wiki_items(site, item_title):
@@ -23,6 +23,20 @@ def find_wiki_items(site, item_title):
     request = api.Request(site = site, **params)
     return request.submit()
 
+def get_claims(item):
+    try:
+        item_dict = item.get()
+        if p_population in item.claims:
+            claims = item_dict['claims'][p_population]
+            if len(claims) > 0:
+                return claims
+            else:
+                return None
+        else:
+            return None
+    except:
+        raise
+
 def check_claim(claim, val):
     try:
         #0 - claim matches
@@ -31,27 +45,29 @@ def check_claim(claim, val):
         claim_status = 0
         p_in_time = qualifiers[0][0]
         det_method = qualifiers[1][0]
-        print('Year: {}, Value: {}'.format(claim.qualifiers[p_in_time][0].getTarget().year,claim.getTarget().amount))
+        logging.info('Entry Value: {}'.format(claim.getTarget().amount))
         if p_in_time in claim.qualifiers:
+            logging.info('Entry Year: {}'.format(claim.qualifiers[p_in_time][0].getTarget().year))
             if claim.qualifiers[p_in_time][0].getTarget().year == qualifiers[0][1][1]:
+                logging.info('claim val: {}, val: {}'.format(claim.getTarget().amount, val))
                 if claim.getTarget().amount == val:
                     if det_method in claim.qualifiers:
                         if claim.qualifiers[det_method][0].getTarget().id != qualifiers[1][1][1]:
-                            print('Qualifier {} value incorrect'.format(qualifiers[1][0]))
+                            logging.info('Qualifier {} value incorrect'.format(qualifiers[1][0]))
                             claim_status = 1
                     else:
-                        print('Qualifier determination method missing')
+                        logging.info('Qualifier determination method missing')
                         claim_status = 1
                 else:
-                    print('Statement claim value incorrect')
+                    logging.info('Statement claim value incorrect')
                     claim_status = 1
             else:
-                print('value should be skipped')
+                logging.info('value should be skipped')
                 claim_status = 2
         else:
-            print('Qualifier point in time missing')
+            logging.info('Qualifier point in time missing')
             claim_status = 1
-        print('Status of Claim: {}'.format(claim_status))
+        logging.info('Status of Claim: {}'.format(claim_status))
         return claim_status
     except:
         raise
@@ -59,11 +75,11 @@ def check_claim(claim, val):
 def check_references(claim):
     source_claims = claim.getSources()
     if len(source_claims) != 1:
-        print('Incorrect number of references')
+        logging.info('Incorrect number of references')
         return False
     else:
         if len(source_claims[0]) != 2:
-            print('Incorrect number of items in reference')
+            logging.info('Incorrect number of items in reference')
             return False
         else:
             for k, v in source_claims[0].items():
@@ -75,17 +91,17 @@ def check_references(claim):
                     elif prop_type == 'url':
                         source_val = v[0].getTarget()
                     if source_val != references[k][1]:
-                        print('Value incorrect for key: {}'.format(k))
+                        logging.info('Value incorrect for key: {}'.format(k))
                         return False
                 else:
-                    print('Wrong item contained in reference')
+                    logging.info('Wrong item contained in reference')
                     return False
     return True
 
 def remove_claim(claim, prop):
     try:
         item.removeClaims(claim)
-        print('Claim removed')
+        logging.info('Claim removed')
         return True
     except:
         return False
@@ -96,7 +112,7 @@ def create_claim(prop, prop_val):
     newclaim.setTarget(wb_quant)
     #need to change to True once flag is received
     item.addClaim(newclaim, bot = False, summary = claim_add_summary)
-    print('New claim created')
+    logging.info('New claim created')
     return newclaim
 
 def create_qualifiers(claim):
@@ -108,7 +124,7 @@ def create_qualifiers(claim):
             trgt_item = pywikibot.ItemPage(repo, q[1][1])
         qualifier.setTarget(trgt_item)
         claim.addQualifier(qualifier)
-        print('Qualifier: {} added'.format(q[0]))
+        logging.info('Qualifier: {} added'.format(q[0]))
     return True
 
 def create_references(claim):
@@ -124,7 +140,7 @@ def create_references(claim):
             source_claim.setTarget(trgt_item)
             source_claim_list.append(source_claim)
         claim.addSources(source_claim_list)
-        print('References added')
+        logging.info('References added')
         return True
     except:
         return False
@@ -134,62 +150,93 @@ def add_full_claim():
         newclaim = create_claim(p_population, pop_val)
         create_qualifiers(newclaim)
         create_references(newclaim)
-        print('Full claim added')
+        logging.info('Full claim added')
     except:
         raise
 
 if __name__ == '__main__':
     scriptpath = os.path.dirname(os.path.abspath(__file__))
-    mode = 'test'
-    #mode = 'wikidata'
-    site = pywikibot.Site(mode, 'wikidata')
-    repo = site.data_repository()
     api_url = 'http://api.census.gov/data/2015/pep/population'
     ref_url = 'http://www.census.gov/data/developers/data-sets/popest-popproj/popest.html'
     claim_add_summary = 'Adding 2015 state population claim'
+
+    #logging configuration
+    logging.basicConfig(
+                        filename='logs/censusbot-log-'+time.strftime('%Y%m%d'),
+                        level=logging.INFO,
+                        format='%(asctime)s - %(name)s - %(levelname)s -%(message)s',
+                        datefmt='%Y%m%d %H:%M:%S'
+                       )
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+                        '-t',
+                        '--testmode',
+                        required=False,
+                        help='Pass this flag to use the test Wikidata instance',
+                        action="store_true",
+                        default = False
+                       )
+
+    args = parser.parse_args()
+    logging.info("--SCRIPT ARGUMENTS--------------")
+    logging.info('-- Test Mode flag set to: {}'.format(args.testmode))
+    logging.info("-- [JOB START]  ----------------")
+
     #qualifiers - point in time, determination method
     #references - ref url, stated in
-    if mode == 'test':
+    #if mode == 'test':
+    if args.testmode:
+        site = pywikibot.Site('test', 'wikidata')
         p_population = 'P63'
         qualifiers = [('P66',['time', 2015]), ('P144', ['item', 'Q32616'])]
         references = {'P149': ['id', 'Q32615'], 'P93': ['url', ref_url]}
-    elif mode == 'wikidata':
+        pop_claim = {'P63': {'qualfiers': [('P66',['time', 2015]), ('P144', ['item', 'Q32616'])],
+                             'references': {'P149': ['id', 'Q32615'], 'P93': ['url', ref_url]}
+                            }
+                    }
+    else:
+        site = pywikibot.Site('wikidata', 'wikidata')
         p_population = 'P1082'
         qualifiers = [('P585',['time', 2015]), ('P459', ['item', 'Q637413'])]
         references = {'P248': ['id','Q463769'], 'P854': ['url', ref_url]}
+        pop_claim = {'P1082': {'qualifiers': [('P585',['time', 2015]), ('P459', ['item', 'Q637413'])],
+                               'references': {'P248': ['id','Q463769'], 'P854': ['url', ref_url]}
+                              }
+                    }
+
+    #mode = 'test'
+    #mode = 'wikidata'
+    #site = pywikibot.Site(mode, 'wikidata')
+    repo = site.data_repository()
 
     pop_values = get_census_values()
     for val in pop_values[1:]:
         key = val[1].split(',')[0]+', United States'
         pop_val = int(val[0])
-        print('State: {} - {}'.format(key, pop_val))
+        logging.info('State: {} - {}'.format(key, pop_val))
         search_results = find_wiki_items(site, key)
         #if only single search result
         num_of_results = len(search_results['search'])
         if num_of_results == 1:
             item = pywikibot.ItemPage(repo, search_results['search'][0]['id'])
-            item_dict = item.get()
+            claims = get_claims(item)
             claim_present = False
-            if p_population in item.claims:
-                claims = item_dict['claims'][p_population]
-                if len(claims) > 0:
-                    for claim in claims:
-                        claim_status = check_claim(claim, pop_val)
-                        if claim_status == 0:
-                            source = check_references(claim)
-                            if not source:
-                                remove_claim(claim, p_population)
-                            else:
-                                claim_present = True
-                        elif claim_status == 1:
+            if claims:
+                for claim in claims:
+                    claim_status = check_claim(claim, pop_val)
+                    if claim_status == 0:
+                        source = check_references(claim)
+                        if not source:
                             remove_claim(claim, p_population)
+                        else:
+                            claim_present = True
+                    elif claim_status == 1:
+                        remove_claim(claim, p_population)
             if not claim_present:
-                try:
-                    add_full_claim()
-                except:
-                    raise
+                add_full_claim()
         elif num_of_results == 0:
-            print('0 wiki items found')
+            logging.info('0 wiki items found')
             #create method for adding new page for item
         elif num_of_results > 1:
-            print('more than 1 wiki item found')
+            logging.info('more than 1 wiki item found')
