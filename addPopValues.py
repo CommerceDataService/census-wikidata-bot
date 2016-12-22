@@ -1,7 +1,6 @@
 #!/usr/bin/python3.5
 
-import pywikibot, json, os, requests, argparse, logging, time
-from pywikibot.data import api
+import pywikibot, json, os, requests, argparse, logging, time, json, pprint
 
 
 def get_census_values():
@@ -111,7 +110,7 @@ def create_claim(prop, prop_val):
     wb_quant = pywikibot.WbQuantity(prop_val)
     newclaim.setTarget(wb_quant)
     #need to change to True once flag is received
-    item.addClaim(newclaim, bot = False, summary = claim_add_summary)
+    item.addClaim(newclaim, bot = False, summary = summary)
     logging.info('New claim created')
 
     return newclaim
@@ -157,15 +156,36 @@ def add_full_claim():
 
 def loadConfig(data_file):
     try:
-
+        with open(data_file) as df:
+            jsondata = json.load(df)
+            for api_item in jsondata:
+                for item in api_item:
+                    print('ITEM IN API ITEM')
+                    print(json.dumps(api_item, indent=4))
+                    api_url = api_item['api_url']
+                    get_var = api_item['get']
+                    for_var = api_item['for']
+                    summary = api_item['summary']
+                    statement = api_item['items']['statement']
+                    print(api_item['items']['content'])
+                    #qualifiers = api_item['items']['content']
+                    #references = api_item['items']['content']
     except:
         raise
 
 if __name__ == '__main__':
     scriptpath = os.path.dirname(os.path.abspath(__file__))
-    api_url = 'http://api.census.gov/data/2015/pep/population'
-    ref_url = 'http://www.census.gov/data/developers/data-sets/popest-popproj/popest.html'
-    claim_add_summary = 'Adding 2015 state population claim'
+    #api_url = 'http://api.census.gov/data/2015/pep/population'
+    #ref_url = 'http://www.census.gov/data/developers/data-sets/popest-popproj/popest.html'
+    #claim_add_summary = 'Adding 2015 state population claim'
+    api_url = None
+    get_var = None
+    for_var = None
+    summary = None
+    statement = None
+    qualifiers = []
+    references = {}
+
     #logging configuration
     logging.basicConfig(
                         filename='logs/censusbot-log-'+time.strftime('%Y%m%d'),

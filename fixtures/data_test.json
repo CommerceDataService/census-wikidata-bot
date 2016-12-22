@@ -1,20 +1,21 @@
-#JSON file for data structures
 [
     {
         "api_url": "http://api.census.gov/data/2015/pep/population",
         "response": "POP, GEONAME, state",
         "get": "POP, GEONAME",
         "for": "state:*",
+        "summary": "Adding 2015 state population claim",
         "items": {
-            "P1082": {
-                          "qualifiers": [
-                                            ["P585",["time", 2015]],
-                                            ["P459",["item", "Q637413"]]
-                          ],
-                          "references": {
-                                            "P248": ["id", "Q463769"],
-                                            "P854": ["url", "http://www.census.gov/data/developers/data-sets/popest-popproj/popest.html"]
-                          }
+            "statement": "P1082",
+            "content": {
+                "qualifiers": [
+                    ["P585",["time", 2015]],
+                    ["P459",["item", "Q637413"]]
+                ],
+                "references": {
+                    "P248": ["id", "Q463769"],
+                    "P854": ["url", "http://www.census.gov/data/developers/data-sets/popest-popproj/popest.html"]
+                }
             }
         }
     },
@@ -23,15 +24,17 @@
         "response": "POP, GEONAME, state, county",
         "get": "POP, GEONAME",
         "for": "county:*",
+        "summary": "Adding 2015 county population claim",
         "items":{
-            "P63": {
+            "statement": "P63",
+            "content": {
                 "qualfiers": [
-                                  ["P66",["time", 2015]],
-                                  ["P144", ["item", "Q32616"]]
+                    ["P66",["time", 2015]],
+                    ["P144", ["item", "Q32616"]]
                 ],
                 "references": {
-                                  "P149": ["id", "Q32615"],
-                                  "P93": ["url", "http://www.census.gov/data/developers/data-sets/popest-popproj/popest.html"]
+                    "P149": ["id", "Q32615"],
+                    "P93": ["url", "http://www.census.gov/data/developers/data-sets/popest-popproj/popest.html"]
                 }
             }
         }
