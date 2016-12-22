@@ -113,6 +113,7 @@ def create_claim(prop, prop_val):
     #need to change to True once flag is received
     item.addClaim(newclaim, bot = False, summary = claim_add_summary)
     logging.info('New claim created')
+
     return newclaim
 
 def create_qualifiers(claim):
@@ -154,20 +155,24 @@ def add_full_claim():
     except:
         raise
 
+def loadConfig(data_file):
+    try:
+
+    except:
+        raise
+
 if __name__ == '__main__':
     scriptpath = os.path.dirname(os.path.abspath(__file__))
     api_url = 'http://api.census.gov/data/2015/pep/population'
     ref_url = 'http://www.census.gov/data/developers/data-sets/popest-popproj/popest.html'
     claim_add_summary = 'Adding 2015 state population claim'
-
     #logging configuration
     logging.basicConfig(
                         filename='logs/censusbot-log-'+time.strftime('%Y%m%d'),
                         level=logging.INFO,
                         format='%(asctime)s - %(name)s - %(levelname)s -%(message)s',
                         datefmt='%Y%m%d %H:%M:%S'
-                       )
-
+    )
     parser = argparse.ArgumentParser()
     parser.add_argument(
                         '-t',
@@ -176,8 +181,7 @@ if __name__ == '__main__':
                         help='Pass this flag to use the test Wikidata instance',
                         action="store_true",
                         default = False
-                       )
-
+    )
     args = parser.parse_args()
     logging.info("--SCRIPT ARGUMENTS--------------")
     logging.info('-- Test Mode flag set to: {}'.format(args.testmode))
@@ -186,30 +190,33 @@ if __name__ == '__main__':
     #qualifiers - point in time, determination method
     #references - ref url, stated in
     #if mode == 'test':
+    # if args.testmode:
+    #     site = pywikibot.Site('test', 'wikidata')
+    #     p_population = 'P63'
+    #     qualifiers = [('P66',['time', 2015]), ('P144', ['item', 'Q32616'])]
+    #     references = {'P149': ['id', 'Q32615'], 'P93': ['url', ref_url]}
+    #     pop_claim = {'P63': {'qualfiers': [('P66',['time', 2015]), ('P144', ['item', 'Q32616'])],
+    #                          'references': {'P149': ['id', 'Q32615'], 'P93': ['url', ref_url]}
+    #                         }
+    #                 }
+    # else:
+    #     site = pywikibot.Site('wikidata', 'wikidata')
+    #     p_population = 'P1082'
+    #     qualifiers = [('P585',['time', 2015]), ('P459', ['item', 'Q637413'])]
+    #     references = {'P248': ['id','Q463769'], 'P854': ['url', ref_url]}
+    #     pop_claim = {'P1082': {'qualifiers': [('P585',['time', 2015]), ('P459', ['item', 'Q637413'])],
+    #                            'references': {'P248': ['id','Q463769'], 'P854': ['url', ref_url]}
+    #                           }
+    #                 }
     if args.testmode:
         site = pywikibot.Site('test', 'wikidata')
-        p_population = 'P63'
-        qualifiers = [('P66',['time', 2015]), ('P144', ['item', 'Q32616'])]
-        references = {'P149': ['id', 'Q32615'], 'P93': ['url', ref_url]}
-        pop_claim = {'P63': {'qualfiers': [('P66',['time', 2015]), ('P144', ['item', 'Q32616'])],
-                             'references': {'P149': ['id', 'Q32615'], 'P93': ['url', ref_url]}
-                            }
-                    }
+        data_file = os.path.join(scriptpath, "fixtures", "data_test.json")
+        loadConfig(data_file)
     else:
         site = pywikibot.Site('wikidata', 'wikidata')
-        p_population = 'P1082'
-        qualifiers = [('P585',['time', 2015]), ('P459', ['item', 'Q637413'])]
-        references = {'P248': ['id','Q463769'], 'P854': ['url', ref_url]}
-        pop_claim = {'P1082': {'qualifiers': [('P585',['time', 2015]), ('P459', ['item', 'Q637413'])],
-                               'references': {'P248': ['id','Q463769'], 'P854': ['url', ref_url]}
-                              }
-                    }
+        data_file = os.path.join(scriptpath, "fixtures", "data.json")
 
-    #mode = 'test'
-    #mode = 'wikidata'
-    #site = pywikibot.Site(mode, 'wikidata')
     repo = site.data_repository()
-
     pop_values = get_census_values()
     for val in pop_values[1:]:
         key = val[1].split(',')[0]+', United States'
