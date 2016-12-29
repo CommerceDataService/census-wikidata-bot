@@ -159,11 +159,11 @@ if __name__ == '__main__':
     if mode == 'test':
         p_population = 'P63'
         qualifiers = [('P66',['time', 2015]), ('P144', ['item', 'Q35384'])]
-        references = {'P93': ['url', ref_url], 'P149': ['id', 'Q36945']}
+        references = {'P149': ['id', 'Q36945'], 'P93': ['url', ref_url]}
     elif mode == 'wikidata':
         p_population = 'P1082'
         qualifiers = [('P585',['time', 2015]), ('P459', ['item', 'Q637413'])]
-        references = {'P248': ['id','Q463769'], 'P854': ['url', ref_url]}
+        references = {'P248': ['id','Q791801'], 'P854': ['url', ref_url]}
 
     pop_values = get_census_values()
     for val in pop_values[1:]:
