@@ -1,17 +1,24 @@
 #!/usr/bin/python3.5
 
-import pywikibot, json, os, requests, argparse, logging, time, json, pprint
+import pywikibot, json, os, requests, argparse, logging, time, json, sys
+from pywikibot.data import api
 
-
-def get_census_values():
+def get_census_values(api_url, get_var, for_var):
     try:
-        payload = {'get': 'POP,GEONAME','for': 'state:*'}
-        url = api_url
-        r = requests.get(api_url, params = payload)
+        payload = {'get': get_var,'for': for_var}
+        print(payload)
+        r = requests.get(api_url, params=payload)
+        print(r)
         return r.json()
     except requests.exceptions.RequestException as e:
         logging.error(e)
         sys.exit(1)
+    except IOError as err:
+        logging.error(err)
+        if error.code == '400':
+            logging.error(err)
+        else:
+            logging.error('Error!!!!! {}'.format(err.code))
 
 def find_wiki_items(site, item_title):
     params = {'action': 'wbsearchentities',
@@ -25,8 +32,8 @@ def find_wiki_items(site, item_title):
 def get_claims(item):
     try:
         item_dict = item.get()
-        if p_population in item.claims:
-            claims = item_dict['claims'][p_population]
+        if statement in item.claims:
+            claims = item_dict['claims'][statement]
             if len(claims) > 0:
                 return claims
             else:
@@ -36,7 +43,7 @@ def get_claims(item):
     except:
         raise
 
-def check_claim(claim, val):
+def check_claim(claim, val, qualifiers):
     try:
         #0 - claim matches
         #1 - remove claim
@@ -71,7 +78,7 @@ def check_claim(claim, val):
     except:
         raise
 
-def check_references(claim):
+def check_references(claim, references):
     source_claims = claim.getSources()
     if len(source_claims) != 1:
         logging.info('Incorrect number of references')
@@ -112,10 +119,9 @@ def create_claim(prop, prop_val):
     #need to change to True once flag is received
     item.addClaim(newclaim, bot = False, summary = summary)
     logging.info('New claim created')
-
     return newclaim
 
-def create_qualifiers(claim):
+def create_qualifiers(claim, qualifiers):
     for q in qualifiers:
         qualifier = pywikibot.Claim(repo, q[0])
         if q[1][0] == 'time':
@@ -127,7 +133,7 @@ def create_qualifiers(claim):
         logging.info('Qualifier: {} added'.format(q[0]))
     return True
 
-def create_references(claim):
+def create_references(claim, references):
     try:
         source_claim_list = []
         for k, v in references.items():
@@ -145,46 +151,55 @@ def create_references(claim):
     except:
         return False
 
-def add_full_claim():
+def add_full_claim(statement, pop_val):
     try:
-        newclaim = create_claim(p_population, pop_val)
+        newclaim = create_claim(statement, pop_val)
         create_qualifiers(newclaim)
         create_references(newclaim)
-        logging.info('Full claim added')
+        logging.info('Full claim addition complete')
     except:
         raise
 
 def loadConfig(data_file):
+    #global api_url, get_var, for_var, summary, statement, references, qualifiers
     try:
         with open(data_file) as df:
             jsondata = json.load(df)
-            for api_item in jsondata:
-                for item in api_item:
-                    print('ITEM IN API ITEM')
-                    print(json.dumps(api_item, indent=4))
-                    api_url = api_item['api_url']
-                    get_var = api_item['get']
-                    for_var = api_item['for']
-                    summary = api_item['summary']
-                    statement = api_item['items']['statement']
-                    print(api_item['items']['content'])
-                    #qualifiers = api_item['items']['content']
-                    #references = api_item['items']['content']
+            return jsondata
+            # for api_item in jsondata:
+            #     api_url = api_item['api_url']
+            #     logging.info('api_url: {}'.format(api_url))
+            #     get_var = api_item['get']
+            #     logging.info('get_var: {}'.format(get_var))
+            #     for_var = api_item['for']
+            #     logging.info('for_var: {}'.format(for_var))
+            #     summary = api_item['summary']
+            #     logging.info('summary: {}'.format(summary))
+            #     for item in api_item['items']:
+            #         statement = item['statement']
+            #         logging.info('statement: {}'.format(statement))
+            #         content = item['content']
+            #         references = content['references']
+            #         logging.info('references: {}'.format(references))
+            #         qualifiers = content.get('qualifiers')
+            #         logging.info('qualifiers: {}'.format(qualifiers))
     except:
         raise
 
+#def processClaim():
+
 if __name__ == '__main__':
     scriptpath = os.path.dirname(os.path.abspath(__file__))
-    #api_url = 'http://api.census.gov/data/2015/pep/population'
-    #ref_url = 'http://www.census.gov/data/developers/data-sets/popest-popproj/popest.html'
-    #claim_add_summary = 'Adding 2015 state population claim'
-    api_url = None
-    get_var = None
-    for_var = None
-    summary = None
-    statement = None
-    qualifiers = []
-    references = {}
+    #change these from global variables
+    # api_url = None
+    # get_var = None
+    # for_var = None
+    # summary = None
+    # statement = None
+    # qualifiers = []
+    # references = {}
+
+    data = []
 
     #logging configuration
     logging.basicConfig(
@@ -207,6 +222,9 @@ if __name__ == '__main__':
     logging.info('-- Test Mode flag set to: {}'.format(args.testmode))
     logging.info("-- [JOB START]  ----------------")
 
+    requests_log = logging.getLogger("requests.packages.urllib3")
+    requests_log.setLevel(logging.DEBUG)
+    requests_log.propagate = True
     #qualifiers - point in time, determination method
     #references - ref url, stated in
     #if mode == 'test':
@@ -231,39 +249,64 @@ if __name__ == '__main__':
     if args.testmode:
         site = pywikibot.Site('test', 'wikidata')
         data_file = os.path.join(scriptpath, "fixtures", "data_test.json")
-        loadConfig(data_file)
+        data = loadConfig(data_file)
     else:
         site = pywikibot.Site('wikidata', 'wikidata')
         data_file = os.path.join(scriptpath, "fixtures", "data.json")
+        #data = loadConfig(data_file)
 
     repo = site.data_repository()
-    pop_values = get_census_values()
-    for val in pop_values[1:]:
-        key = val[1].split(',')[0]+', United States'
-        pop_val = int(val[0])
-        logging.info('State: {} - {}'.format(key, pop_val))
-        search_results = find_wiki_items(site, key)
-        #if only single search result
-        num_of_results = len(search_results['search'])
-        if num_of_results == 1:
-            item = pywikibot.ItemPage(repo, search_results['search'][0]['id'])
-            claims = get_claims(item)
-            claim_present = False
-            if claims:
-                for claim in claims:
-                    claim_status = check_claim(claim, pop_val)
-                    if claim_status == 0:
-                        source = check_references(claim)
-                        if not source:
-                            remove_claim(claim, p_population)
-                        else:
-                            claim_present = True
-                    elif claim_status == 1:
-                        remove_claim(claim, p_population)
-            if not claim_present:
-                add_full_claim()
-        elif num_of_results == 0:
-            logging.info('0 wiki items found')
-            #create method for adding new page for item
-        elif num_of_results > 1:
-            logging.info('more than 1 wiki item found')
+    if data:
+        for api_item in data:
+            api_url = api_item['api_url']
+            logging.info('api_url: {}'.format(api_url))
+            get_var = api_item['get']
+            logging.info('get_var: {}'.format(get_var))
+            for_var = api_item['for']
+            logging.info('for_var: {}'.format(for_var))
+            summary = api_item['summary']
+            logging.info('summary: {}'.format(summary))
+            for item in api_item['items']:
+                statement = item['statement']
+                logging.info('statement: {}'.format(statement))
+                content = item['content']
+                references = content['references']
+                logging.info('references: {}'.format(references))
+                qualifiers = content.get('qualifiers')
+                logging.info('qualifiers: {}'.format(qualifiers))
+
+                #process each item
+                pop_values = get_census_values(api_url, get_var, for_var)
+                for val in pop_values[1:]:
+                    key = val[1].split(',')[0]+', United States'
+                    pop_val = int(val[0])
+                    logging.info('State: {} - {}'.format(key, pop_val))
+                    search_results = find_wiki_items(site, key)
+                    #if only single search result
+                    num_of_results = len(search_results['search'])
+                    if num_of_results == 1:
+                        item = pywikibot.ItemPage(repo, search_results['search'][0]['id'])
+                        claims = get_claims(item)
+                        claim_present = False
+                        if claims:
+                            for claim in claims:
+                                claim_status = check_claim(claim, val, qualifiers)
+                                if claim_status == 0:
+                                    source = check_references(claim, references)
+                                    if not source:
+                                        remove_claim(claim, statement)
+                                    else:
+                                        claim_present = True
+                                elif claim_status == 1:
+                                    remove_claim(claim, statement)
+                        if not claim_present:
+                            add_full_claim(statement, pop_val)
+                    elif num_of_results == 0:
+                        logging.info('0 wiki items found')
+                        #create method for adding new page for item
+                    elif num_of_results > 1:
+                        logging.info('more than 1 wiki item found')
+
+
+    else:
+        logging.error('data file did not load any claims to iterate over')
