@@ -5,7 +5,8 @@ from pywikibot.data import api
 
 def get_census_values(api_url, get_var, for_var):
     try:
-        payload = {'get': get_var,'for': for_var}
+        #payload = {'get': get_var,'for': for_var}
+        payload = {'get': 'POP,GEONAME','for': 'state:*'}
         print(payload)
         r = requests.get(api_url, params=payload)
         print(r)
@@ -151,11 +152,11 @@ def create_references(claim, references):
     except:
         return False
 
-def add_full_claim(statement, pop_val):
+def add_full_claim(statement, pop_val, qualifiers, references):
     try:
         newclaim = create_claim(statement, pop_val)
-        create_qualifiers(newclaim)
-        create_references(newclaim)
+        create_qualifiers(newclaim, qualifiers)
+        create_references(newclaim, references)
         logging.info('Full claim addition complete')
     except:
         raise
@@ -300,7 +301,7 @@ if __name__ == '__main__':
                                 elif claim_status == 1:
                                     remove_claim(claim, statement)
                         if not claim_present:
-                            add_full_claim(statement, pop_val)
+                            add_full_claim(statement, pop_val, qualifiers, references)
                     elif num_of_results == 0:
                         logging.info('0 wiki items found')
                         #create method for adding new page for item
