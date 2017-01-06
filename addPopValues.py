@@ -152,18 +152,18 @@ if __name__ == '__main__':
     site = pywikibot.Site(mode, 'wikidata')
     repo = site.data_repository()
     api_url = 'http://api.census.gov/data/2015/pep/population'
-    ref_url = 'http://www.census.gov/data/developers/data-sets/popest-popproj/popest.html'
+    ref_url = 'https://www.census.gov/programs-surveys/popest.html'
     claim_add_summary = 'Adding 2015 state population claim'
     #qualifiers - point in time, determination method
     #references - ref url, stated in
     if mode == 'test':
         p_population = 'P63'
-        qualifiers = [('P66',['time', 2015]), ('P144', ['item', 'Q35384'])]
-        references = {'P149': ['id', 'Q36945'], 'P93': ['url', ref_url]}
+        qualifiers = [('P66',['time', 2015]), ('P144', ['item', 'Q40541'])]
+        references = {'P93': ['url', ref_url], 'P149': ['id', 'Q40542']}
     elif mode == 'wikidata':
         p_population = 'P1082'
-        qualifiers = [('P585',['time', 2015]), ('P459', ['item', 'Q637413'])]
-        references = {'P248': ['id','Q791801'], 'P854': ['url', ref_url]}
+        qualifiers = [('P585',['time', 2015]), ('P459', ['item', 'Q15911027'])]
+        references = {'P248': ['id','Q7229779'], 'P854': ['url', ref_url]}
 
     pop_values = get_census_values()
     for val in pop_values[1:]:
