@@ -147,8 +147,7 @@ def add_full_claim():
 
 if __name__ == '__main__':
     scriptpath = os.path.dirname(os.path.abspath(__file__))
-    mode = 'test'
-    #mode = 'wikidata'
+    mode = 'wikidata'
     site = pywikibot.Site(mode, 'wikidata')
     repo = site.data_repository()
     api_url = 'http://api.census.gov/data/2015/pep/population'
@@ -175,7 +174,7 @@ if __name__ == '__main__':
         num_of_results = len(search_results['search'])
         if num_of_results == 1:
             item = pywikibot.ItemPage(repo, search_results['search'][0]['id'])
-            item_dict = item.get()
+            item_dict = item.get(force=True)
             claim_present = False
             if p_population in item.claims:
                 claims = item_dict['claims'][p_population]
