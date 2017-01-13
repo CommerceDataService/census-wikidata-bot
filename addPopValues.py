@@ -104,8 +104,7 @@ def create_claim(prop, prop_val):
     newclaim = pywikibot.Claim(repo, prop)
     wb_quant = pywikibot.WbQuantity(prop_val)
     newclaim.setTarget(wb_quant)
-    #need to change to True once flag is received
-    item.addClaim(newclaim, bot = False, summary = claim_add_summary)
+    item.addClaim(newclaim, bot = True, summary = claim_add_summary)
     print('New claim created')
     return newclaim
 
@@ -178,7 +177,7 @@ if __name__ == '__main__':
         #if only single search result
         if len(search_results['results']['bindings']) == 1:
             item_id = search_results['results']['bindings'][0]['wd']['value']
-            print('Item ID: {}'.format(item_id)
+            print('Item ID: {}'.format(item_id))
             item = pywikibot.ItemPage(repo, item_id.split('/')[-1])
             item_dict = item.get(force=True)
             claim_present = False
