@@ -21,23 +21,6 @@ def get_census_values(api_url):
         print(e)
         sys.exit(1)
 
-# def find_wiki_items(site, item_title):
-#     params = {'action': 'wbsearchentities',
-#               'format': 'json',
-#               'language': 'en',
-#               'type': 'item',
-#               'search': item_title}
-#     request = api.Request(site = site, **params)
-#     return request.submit()
-
-# def find_wiki_items(site, item_key):
-#     with open('my_query.rq', 'r') as query_file:
-#         QUERY = 'SELECT * WHERE {?wd wdt:P901 \"'+item_key+'\".}'
-#         print(QUERY)
-#     generator = pg.WikidataQueryPageGenerator(QUERY, site=site)
-#     #generator = pg.WikidataSPARQLPageGenerator(QUERY, site=site)
-#     return generator
-
 def find_wiki_items(site, item_key):
     try:
         sparql_url = 'https://query.wikidata.org/sparql'
@@ -195,7 +178,7 @@ if __name__ == '__main__':
         #if only single search result
         if len(search_results['results']['bindings']) == 1:
             item_id = search_results['results']['bindings'][0]['wd']['value']
-            print(item_id)
+            print('Item ID: {}'.format(item_id)
             item = pywikibot.ItemPage(repo, item_id.split('/')[-1])
             item_dict = item.get(force=True)
             claim_present = False
