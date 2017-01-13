@@ -8,26 +8,46 @@
 
 import pywikibot, json, os, requests
 from pywikibot.data import api
+from pywikibot import pagegenerators as pg
 
 
-def get_census_values():
+def get_census_values(api_url):
     try:
-        payload = {'get': 'POP,GEONAME','for': 'state:*'}
-        url = api_url
+        payload = {'get': 'POP,GEONAME','for': 'state:*',\
+         'key': os.environ['CENSUS']}
         r = requests.get(api_url, params = payload)
         return r.json()
     except requests.exceptions.RequestException as e:
         print(e)
         sys.exit(1)
 
-def find_wiki_items(site, item_title):
-    params = {'action': 'wbsearchentities',
-              'format': 'json',
-              'language': 'en',
-              'type': 'item',
-              'search': item_title}
-    request = api.Request(site = site, **params)
-    return request.submit()
+# def find_wiki_items(site, item_title):
+#     params = {'action': 'wbsearchentities',
+#               'format': 'json',
+#               'language': 'en',
+#               'type': 'item',
+#               'search': item_title}
+#     request = api.Request(site = site, **params)
+#     return request.submit()
+
+# def find_wiki_items(site, item_key):
+#     with open('my_query.rq', 'r') as query_file:
+#         QUERY = 'SELECT * WHERE {?wd wdt:P901 \"'+item_key+'\".}'
+#         print(QUERY)
+#     generator = pg.WikidataQueryPageGenerator(QUERY, site=site)
+#     #generator = pg.WikidataSPARQLPageGenerator(QUERY, site=site)
+#     return generator
+
+def find_wiki_items(site, item_key):
+    try:
+        sparql_url = 'https://query.wikidata.org/sparql'
+        payload = {'query': 'SELECT * WHERE {?wd wdt:P901 \"'+item_key+'\"}',\
+            'format': 'JSON'}
+        r = requests.get(sparql_url, params = payload)
+        return r.json()
+    except requests.exceptions.RequestException as e:
+        print(e)
+        sys.exit(1)
 
 def check_claim(claim, val):
     try:
@@ -162,18 +182,21 @@ if __name__ == '__main__':
     elif mode == 'wikidata':
         p_population = 'P1082'
         qualifiers = [('P585',['time', 2015]), ('P459', ['item', 'Q15911027'])]
-        references = {'P248': ['id','Q7229779'], 'P854': ['url', ref_url]}
+        references = {'P854': ['url', ref_url], 'P248': ['id','Q7229779']}
 
-    pop_values = get_census_values()
+    pop_values = get_census_values(api_url)
+    #for val in pop_values[1:]:
     for val in pop_values[1:]:
-        key = val[1].split(',')[0]+', United States'
+        key = 'US'+val[2]
+        # key = val[1].split(',')[0]+', United States'
         pop_val = int(val[0])
-        print('State: {} - {}'.format(key, pop_val))
+        print('State: {}[{}] - Population: {}'.format(val[1].split(',')[0], key, pop_val))
         search_results = find_wiki_items(site, key)
         #if only single search result
-        num_of_results = len(search_results['search'])
-        if num_of_results == 1:
-            item = pywikibot.ItemPage(repo, search_results['search'][0]['id'])
+        if len(search_results['results']['bindings']) == 1:
+            item_id = search_results['results']['bindings'][0]['wd']['value']
+            print(item_id)
+            item = pywikibot.ItemPage(repo, item_id.split('/')[-1])
             item_dict = item.get(force=True)
             claim_present = False
             if p_population in item.claims:
