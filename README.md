@@ -2,7 +2,7 @@
 
 ![U.S. Census Bureau logo](https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Seal_of_the_United_States_Census_Bureau.svg/240px-Seal_of_the_United_States_Census_Bureau.svg.png)
 
-This project contains code for a bot.  This bot is made to interact with [Wikidata] (https://www.wikidata.org/wiki/Wikidata:Main_Page).  This bot is designed to use Census data specifically and push it to wikidata if a page exists for the subject matter.
+This project contains code for a bot which interacts with [Wikidata] (https://www.wikidata.org/wiki/Wikidata:Main_Page) using the pywikibot library.  This bot is designed to use Census data specifically and push it to wikidata if a page exists for the subject matter.
 
 ## Scope
 Currently, this bot is only set up to use a static file containing U.S. state population values for 2015.  The bot will use these values to search and see if a page exists for that state.  If a single result is found, it will access the page and check if the population statement is present.  If so, it will check the claims.  If there is a claim with no `point in time` value, it will be deleted.  Subsequently, it will check for any entries referring to a `2015` point in time.  If it finds any it will check them for completeness.  if anything is off, it will delete that entry and make a new complete entry.  If no population statement is present or if no 2015 entry for population is present it will add that to the page.  Currently, there is a page for Arizona, Oregon, California, and Virginia on the test site which this bot will find.

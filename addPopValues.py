@@ -1,27 +1,39 @@
 #!/usr/bin/python3.5
 
+#Author:        Sasan Bahadaran
+#Date:          12/16/16
+#Organization:  Commerce Data Service
+#Description:   This is a bot script for getting Census data from the Census
+#Bureau API's and writing it to Wikidata.
+
 import pywikibot, json, os, requests, argparse, logging, time, json, sys
 from pywikibot.data import api
 
+
 def get_census_values(api_url, get_var, for_var):
     try:
-        #payload = {'get': get_var,'for': for_var}
-        payload = {'get': 'POP,GEONAME','for': 'state:*'}
-        print(payload)
+        payload = {'get': get_var, 'for': for_var, 'key': os.environ['CENSUS']}
         r = requests.get(api_url, params=payload)
-        print(r)
         return r.json()
     except requests.exceptions.RequestException as e:
         logging.error(e)
         sys.exit(1)
     except IOError as err:
         logging.error(err)
-        if error.code == '400':
-            logging.error(err)
-        else:
-            logging.error('Error!!!!! {}'.format(err.code))
 
-def find_wiki_items(site, item_title):
+def find_wiki_items(sparql_query, item_key):
+    try:
+        sparql_url = 'https://query.wikidata.org/sparql'
+        payload = {'query': sparql.replace("XXX", '\"'+item_key+'\"', 1),\
+            'format': 'JSON'}
+        r = requests.get(sparql_url, params = payload)
+        return r.json()
+    except requests.exceptions.RequestException as e:
+        logging.error(e)
+        sys.exit(1)
+
+#SPARQL Queries do not work on test site
+def find_test_wiki_items(site, item_title):
     params = {'action': 'wbsearchentities',
               'format': 'json',
               'language': 'en',
@@ -32,7 +44,7 @@ def find_wiki_items(site, item_title):
 
 def get_claims(item):
     try:
-        item_dict = item.get()
+        item_dict = item.get(force=True)
         if statement in item.claims:
             claims = item_dict['claims'][statement]
             if len(claims) > 0:
@@ -85,7 +97,7 @@ def check_references(claim, references):
         logging.info('Incorrect number of references')
         return False
     else:
-        if len(source_claims[0]) != 2:
+        if len(source_claims[0]) != len(references):
             logging.info('Incorrect number of items in reference')
             return False
         else:
@@ -113,12 +125,11 @@ def remove_claim(claim, prop):
     except:
         return False
 
-def create_claim(prop, prop_val):
+def create_claim(prop, prop_val, summary):
     newclaim = pywikibot.Claim(repo, prop)
     wb_quant = pywikibot.WbQuantity(prop_val)
     newclaim.setTarget(wb_quant)
-    #need to change to True once flag is received
-    item.addClaim(newclaim, bot = False, summary = summary)
+    item.addClaim(newclaim, bot = True, summary = summary)
     logging.info('New claim created')
     return newclaim
 
@@ -152,9 +163,9 @@ def create_references(claim, references):
     except:
         return False
 
-def add_full_claim(statement, pop_val, qualifiers, references):
+def add_full_claim(statement, metric_val, qualifiers, references, summary):
     try:
-        newclaim = create_claim(statement, pop_val)
+        newclaim = create_claim(statement, metric_val, summary)
         create_qualifiers(newclaim, qualifiers)
         create_references(newclaim, references)
         logging.info('Full claim addition complete')
@@ -166,40 +177,23 @@ def loadConfig(data_file):
     try:
         with open(data_file) as df:
             jsondata = json.load(df)
+            print(json.dumps(jsondata, indent=4))
             return jsondata
-            # for api_item in jsondata:
-            #     api_url = api_item['api_url']
-            #     logging.info('api_url: {}'.format(api_url))
-            #     get_var = api_item['get']
-            #     logging.info('get_var: {}'.format(get_var))
-            #     for_var = api_item['for']
-            #     logging.info('for_var: {}'.format(for_var))
-            #     summary = api_item['summary']
-            #     logging.info('summary: {}'.format(summary))
-            #     for item in api_item['items']:
-            #         statement = item['statement']
-            #         logging.info('statement: {}'.format(statement))
-            #         content = item['content']
-            #         references = content['references']
-            #         logging.info('references: {}'.format(references))
-            #         qualifiers = content.get('qualifiers')
-            #         logging.info('qualifiers: {}'.format(qualifiers))
     except:
         raise
+
+def getKeyVals(wiki_lookup_key, val):
+    val_key = ''
+    for item in wiki_lookup_key['api_cols']:
+        val_key += val[item]
+    key = wiki_lookup_key['beg_val']+val_key+wiki_lookup_key['end_val']
+    print(key)
+    return key
 
 #def processClaim():
 
 if __name__ == '__main__':
     scriptpath = os.path.dirname(os.path.abspath(__file__))
-    #change these from global variables
-    # api_url = None
-    # get_var = None
-    # for_var = None
-    # summary = None
-    # statement = None
-    # qualifiers = []
-    # references = {}
-
     data = []
 
     #logging configuration
@@ -211,103 +205,94 @@ if __name__ == '__main__':
     )
     parser = argparse.ArgumentParser()
     parser.add_argument(
-                        '-t',
-                        '--testmode',
-                        required=False,
-                        help='Pass this flag to use the test Wikidata instance',
-                        action="store_true",
-                        default = False
+                        '-m',
+                        '--mode',
+                        required=True,
+                        type=str,
+                        choices=['t', 'p'],
     )
     args = parser.parse_args()
     logging.info("--SCRIPT ARGUMENTS--------------")
-    logging.info('-- Test Mode flag set to: {}'.format(args.testmode))
+    if args.mode == 't':
+        logging.info('-- Mode set to: TEST')
+    elif args.mode == 'p':
+        logging.info('-- Mode set to: PROD')
     logging.info("-- [JOB START]  ----------------")
 
-    requests_log = logging.getLogger("requests.packages.urllib3")
-    requests_log.setLevel(logging.DEBUG)
-    requests_log.propagate = True
-    #qualifiers - point in time, determination method
-    #references - ref url, stated in
-    #if mode == 'test':
-    # if args.testmode:
-    #     site = pywikibot.Site('test', 'wikidata')
-    #     p_population = 'P63'
-    #     qualifiers = [('P66',['time', 2015]), ('P144', ['item', 'Q32616'])]
-    #     references = {'P149': ['id', 'Q32615'], 'P93': ['url', ref_url]}
-    #     pop_claim = {'P63': {'qualfiers': [('P66',['time', 2015]), ('P144', ['item', 'Q32616'])],
-    #                          'references': {'P149': ['id', 'Q32615'], 'P93': ['url', ref_url]}
-    #                         }
-    #                 }
-    # else:
-    #     site = pywikibot.Site('wikidata', 'wikidata')
-    #     p_population = 'P1082'
-    #     qualifiers = [('P585',['time', 2015]), ('P459', ['item', 'Q637413'])]
-    #     references = {'P248': ['id','Q463769'], 'P854': ['url', ref_url]}
-    #     pop_claim = {'P1082': {'qualifiers': [('P585',['time', 2015]), ('P459', ['item', 'Q637413'])],
-    #                            'references': {'P248': ['id','Q463769'], 'P854': ['url', ref_url]}
-    #                           }
-    #                 }
-    if args.testmode:
+    # requests_log = logging.getLogger("requests.packages.urllib3")
+    # requests_log.setLevel(logging.DEBUG)
+    # requests_log.propagate = True
+
+    if args.mode == 't':
         site = pywikibot.Site('test', 'wikidata')
-        data_file = os.path.join(scriptpath, "fixtures", "data_test.json")
-        data = loadConfig(data_file)
+        data_file = os.path.join(scriptpath, "data", "data_test.json")
     else:
         site = pywikibot.Site('wikidata', 'wikidata')
-        data_file = os.path.join(scriptpath, "fixtures", "data.json")
-        #data = loadConfig(data_file)
+        data_file = os.path.join(scriptpath, "data", "data.json")
 
+    data = loadConfig(data_file)
     repo = site.data_repository()
     if data:
         for api_item in data:
-            api_url = api_item['api_url']
-            logging.info('api_url: {}'.format(api_url))
-            get_var = api_item['get']
-            logging.info('get_var: {}'.format(get_var))
-            for_var = api_item['for']
-            logging.info('for_var: {}'.format(for_var))
-            summary = api_item['summary']
-            logging.info('summary: {}'.format(summary))
-            for item in api_item['items']:
-                statement = item['statement']
-                logging.info('statement: {}'.format(statement))
-                content = item['content']
-                references = content['references']
-                logging.info('references: {}'.format(references))
-                qualifiers = content.get('qualifiers')
-                logging.info('qualifiers: {}'.format(qualifiers))
+            if api_item['enabled']:
+                api_url = api_item['api_url']
+                logging.info('[api_url]: {}'.format(api_url))
+                logging.info('[Expected response]: {}'.format(api_item['response']))
+                get_var = api_item['get']
+                logging.info('[get_var]: {}'.format(get_var))
+                for_var = api_item['for']
+                logging.info('[for_var]: {}'.format(for_var))
+                summary = api_item['summary']
+                logging.info('[summary]: {}'.format(summary))
+                sparql = api_item['sparql']
+                logging.info('[sparql]: {}'.format(sparql))
+                for item in api_item['items']:
+                    wiki_lookup_key = item['wiki_lookup_key']
+                    logging.info('[wiki_lookup_key]: {}'.format(wiki_lookup_key))
+                    api_value_column = item['api_value_column']
+                    logging.info('[api_value_column]: {}'.format(api_value_column))
+                    statement = item['statement']
+                    logging.info('[statement]: {}'.format(statement))
+                    content = item['content']
+                    references = content['references']
+                    logging.info('[references]: {}'.format(references))
+                    qualifiers = content.get('qualifiers')
+                    logging.info('[qualifiers]: {}'.format(qualifiers))
 
-                #process each item
-                pop_values = get_census_values(api_url, get_var, for_var)
-                for val in pop_values[1:]:
-                    key = val[1].split(',')[0]+', United States'
-                    pop_val = int(val[0])
-                    logging.info('State: {} - {}'.format(key, pop_val))
-                    search_results = find_wiki_items(site, key)
-                    #if only single search result
-                    num_of_results = len(search_results['search'])
-                    if num_of_results == 1:
-                        item = pywikibot.ItemPage(repo, search_results['search'][0]['id'])
-                        claims = get_claims(item)
-                        claim_present = False
-                        if claims:
-                            for claim in claims:
-                                claim_status = check_claim(claim, val, qualifiers)
-                                if claim_status == 0:
-                                    source = check_references(claim, references)
-                                    if not source:
+                    #process each item
+                    metric_values = get_census_values(api_url, get_var, for_var)
+                    for val in metric_values[1:]:
+                        key = getKeyVals(wiki_lookup_key, val)
+                        metric_val = int(val[api_value_column])
+                        logging.info('Metric: {}[{}] - Value: {}'.format(val[1].split(',')[0], key, metric_val))
+                        search_results = find_wiki_items(sparql, key)
+                        #if only single search result
+                        results_cnt = len(search_results['results']['bindings'])
+                        if results_cnt == 1:
+                            item_url = search_results['results']['bindings'][0]['wd']['value']
+                            item_id = pywikibot.ItemPage(repo, item_url.split('/')[-1])
+                            logging.info('Item ID: {}'.format(item_id))
+                            claims = get_claims(item_id)
+                            claim_present = False
+                            if claims:
+                                for claim in claims:
+                                    claim_status = check_claim(claim, val, qualifiers)
+                                    if claim_status == 0:
+                                        source = check_references(claim, references)
+                                        if not source:
+                                            remove_claim(claim, statement)
+                                        else:
+                                            claim_present = True
+                                    elif claim_status == 1:
                                         remove_claim(claim, statement)
-                                    else:
-                                        claim_present = True
-                                elif claim_status == 1:
-                                    remove_claim(claim, statement)
-                        if not claim_present:
-                            add_full_claim(statement, pop_val, qualifiers, references)
-                    elif num_of_results == 0:
-                        logging.info('0 wiki items found')
-                        #create method for adding new page for item
-                    elif num_of_results > 1:
-                        logging.info('more than 1 wiki item found')
-
-
+                            if not claim_present:
+                                add_full_claim(statement, metric_val, qualifiers, references, summary)
+                        elif results_cnt == 0:
+                            logging.info('0 wiki items found')
+                            #create method for adding new page for item
+                        elif results_cnt > 1:
+                            logging.info('more than 1 wiki item found')
+            else:
+                print('not enabled')
     else:
         logging.error('data file did not load any claims to iterate over')

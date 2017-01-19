@@ -1,0 +1,22 @@
+[
+    {
+        "instance": "production",
+        "items": {
+            "population": "P1082",
+            "point in time": "P585",
+            "determination method": "P459",
+            "stated in": "P248",
+            "reference url": "P854"
+        }
+    },
+    {
+        "instance": "test",
+        "items": {
+            "population": "P63",
+            "point in time": "P66",
+            "determination method": "P144",
+            "stated in": "P149",
+            "reference url": "P93"
+        }
+    }
+]
