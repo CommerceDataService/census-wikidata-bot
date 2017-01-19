@@ -259,6 +259,9 @@ if __name__ == '__main__':
                     qualifiers = content.get('qualifiers')
                     logging.info('[qualifiers]: {}'.format(qualifiers))
 
+                    #need to use different method (find_test_wiki_items) when
+                    #passing test flag since SPARQL queries do not work for test
+
                     #process each item
                     metric_values = get_census_values(api_url, get_var, for_var)
                     for val in metric_values[1:]:
