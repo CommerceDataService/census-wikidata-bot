@@ -244,6 +244,7 @@ if __name__ == '__main__':
                 logging.info('[for_var]: {}'.format(for_var))
                 summary = api_item['summary']
                 logging.info('[summary]: {}'.format(summary))
+                #add condition to ignore sparql parameter if test mode
                 sparql = api_item['sparql']
                 logging.info('[sparql]: {}'.format(sparql))
                 for item in api_item['items']:
