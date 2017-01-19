@@ -13,12 +13,19 @@ Going forward, there will be changes to the functionality of this bot and the ra
 ## Setup
 In order to set up this bot to run, a wikidata account with a bot flag approval is necessary.  This bot uses python 3.5 and the main library for interaction with the Wikidata API is [Pywikibot] (https://www.mediawiki.org/wiki/Manual:Pywikibot).  The configuration file for this bot is contained in *user-config.py*.
 
+#### user-config.py
 In the this file, insert your user account in the following line:<br>
 `usernames['sitename']['en'] = u'ExampleBot'`
 
 The `mylang` and `family` parameters will also need to be set accordingly.  Please refer to the documentation for Pywikibot for additional information regarding this (as well as logging in).
 
-Lastly, for testing purposes, there is a `mode` parameter contained in the `addPopValues.py` file.  This can be set to either `test` or `wikidata`.  This determines whether the test site or production property tags will be used.
+#### environment variables
+You will also need to define an environment variable with the name `CENSUS` and a value of your Census API key.  In order to obtain a Census API key, refer to the following [here] (http://api.census.gov/data/key_signup.html).
+
+#### data files
+There are two data files in the `/data` directory of the project.  These contain the necessary information for the bot to know how to communicate with the Census API's, what to get from the API to write to Wikidata, and how to write it.  There is a set structure to these files and you may add JSON objects to them in order for the bot to operate on additional Census API's or additional values for an existing API call.  Since property keys differ between the [test wikidata site] (https://test.wikidata.org/) and the main site, there are separate files for each.
+
+Lastly, for testing purposes, there is a `mode` argument for the `addPopValues.py` file.  This is required and will determine whether the bot runs under test or production mode (including which data file it should use).
 
 ## Running Bot
 Once setup has been completed, the bot can be run by executing the `addPopValues.py` file.
