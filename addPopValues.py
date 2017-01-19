@@ -64,11 +64,11 @@ def check_claim(claim, val, qualifiers):
         claim_status = 0
         p_in_time = qualifiers[0][0]
         det_method = qualifiers[1][0]
-        logging.info('Entry Value: {}'.format(claim.getTarget().amount))
+        logging.info('Entry value: {}'.format(claim.getTarget().amount))
         if p_in_time in claim.qualifiers:
-            logging.info('Entry Year: {}'.format(claim.qualifiers[p_in_time][0].getTarget().year))
+            logging.info('Entry year: {}'.format(claim.qualifiers[p_in_time][0].getTarget().year))
             if claim.qualifiers[p_in_time][0].getTarget().year == qualifiers[0][1][1]:
-                logging.info('claim val: {}, val: {}'.format(claim.getTarget().amount, val))
+                logging.info('Claim value: {}, Value from API: {}'.format(claim.getTarget().amount, val))
                 if claim.getTarget().amount == val:
                     if det_method in claim.qualifiers:
                         if claim.qualifiers[det_method][0].getTarget().id != qualifiers[1][1][1]:
@@ -117,7 +117,7 @@ def check_references(claim, references):
                     return False
     return True
 
-def remove_claim(claim, prop):
+def remove_claim(item, claim, prop):
     try:
         item.removeClaims(claim)
         logging.info('Claim removed')
@@ -125,11 +125,15 @@ def remove_claim(claim, prop):
     except:
         return False
 
-def create_claim(prop, prop_val, summary):
+def create_claim(item, prop, prop_val, summary):
+    logging.info('before newclaim')
     newclaim = pywikibot.Claim(repo, prop)
+    logging.info('before wb_quant')
     wb_quant = pywikibot.WbQuantity(prop_val)
+    logging.info('before setTarget')
     newclaim.setTarget(wb_quant)
-    item.addClaim(newclaim, bot = True, summary = summary)
+    logging.info('before addClaim')
+    item.addClaim(newclaim, bot=True, summary=summary)
     logging.info('New claim created')
     return newclaim
 
@@ -163,9 +167,9 @@ def create_references(claim, references):
     except:
         return False
 
-def add_full_claim(statement, metric_val, qualifiers, references, summary):
+def add_full_claim(item, statement, metric_val, qualifiers, references, summary):
     try:
-        newclaim = create_claim(statement, metric_val, summary)
+        newclaim = create_claim(item, statement, metric_val, summary)
         create_qualifiers(newclaim, qualifiers)
         create_references(newclaim, references)
         logging.info('Full claim addition complete')
@@ -177,7 +181,6 @@ def loadConfig(data_file):
     try:
         with open(data_file) as df:
             jsondata = json.load(df)
-            print(json.dumps(jsondata, indent=4))
             return jsondata
     except:
         raise
@@ -187,7 +190,6 @@ def getKeyVals(wiki_lookup_key, val):
     for item in wiki_lookup_key['api_cols']:
         val_key += val[item]
     key = wiki_lookup_key['beg_val']+val_key+wiki_lookup_key['end_val']
-    print(key)
     return key
 
 #def processClaim():
@@ -211,12 +213,20 @@ if __name__ == '__main__':
                         type=str,
                         choices=['t', 'p'],
     )
+    parser.add_argument(
+                        '-d',
+                        '--debug',
+                        required=False,
+                        action='store_true',
+                        default=False
+    )
     args = parser.parse_args()
     logging.info("--SCRIPT ARGUMENTS--------------")
     if args.mode == 't':
         logging.info('-- Mode set to: TEST')
     elif args.mode == 'p':
         logging.info('-- Mode set to: PROD')
+    logging.info('Debug mode set to: {}'.format(args.debug))
     logging.info("-- [JOB START]  ----------------")
 
     # requests_log = logging.getLogger("requests.packages.urllib3")
@@ -237,16 +247,17 @@ if __name__ == '__main__':
             if api_item['enabled']:
                 api_url = api_item['api_url']
                 logging.info('[api_url]: {}'.format(api_url))
-                logging.info('[Expected response]: {}'.format(api_item['response']))
                 get_var = api_item['get']
                 logging.info('[get_var]: {}'.format(get_var))
                 for_var = api_item['for']
                 logging.info('[for_var]: {}'.format(for_var))
                 summary = api_item['summary']
+                response = api_item['response']
+                logging.info('[Expected response]: {}'.format(response))
                 logging.info('[summary]: {}'.format(summary))
-                #add condition to ignore sparql parameter if test mode
-                sparql = api_item['sparql']
-                logging.info('[sparql]: {}'.format(sparql))
+                if args.mode == 'p':
+                    sparql = api_item['sparql']
+                    logging.info('[sparql]: {}'.format(sparql))
                 for item in api_item['items']:
                     wiki_lookup_key = item['wiki_lookup_key']
                     logging.info('[wiki_lookup_key]: {}'.format(wiki_lookup_key))
@@ -260,42 +271,54 @@ if __name__ == '__main__':
                     qualifiers = content.get('qualifiers')
                     logging.info('[qualifiers]: {}'.format(qualifiers))
 
-                    #need to use different method (find_test_wiki_items) when
-                    #passing test flag since SPARQL queries do not work for test
-
                     #process each item
                     metric_values = get_census_values(api_url, get_var, for_var)
+                    logging.info('Number of items in API Response: {}'.format(len(metric_values[1:])))
                     for val in metric_values[1:]:
-                        key = getKeyVals(wiki_lookup_key, val)
+                        logging.info(val)
                         metric_val = int(val[api_value_column])
-                        logging.info('Metric: {}[{}] - Value: {}'.format(val[1].split(',')[0], key, metric_val))
-                        search_results = find_wiki_items(sparql, key)
+                        if args.mode == 't':
+                            #need to account for the split operation in the config file
+                            #in case future key values need operations on them
+                            #and contain common logic in getKeyVals function
+                            key = val[0].split(',')[0]+', United States'
+                            logging.info('Search key: {}'.format(key))
+                            search_results = find_test_wiki_items(site, key)
+                            num_of_results = len(search_results['search'])
+                        elif args.mode == 'p':
+                            key = getKeyVals(wiki_lookup_key, val)
+                            search_results = find_wiki_items(sparql, key)
+                            num_of_results = len(search_results['results']['bindings'])
                         #if only single search result
-                        results_cnt = len(search_results['results']['bindings'])
-                        if results_cnt == 1:
-                            item_url = search_results['results']['bindings'][0]['wd']['value']
-                            item_id = pywikibot.ItemPage(repo, item_url.split('/')[-1])
-                            logging.info('Item ID: {}'.format(item_id))
-                        #     claims = get_claims(item_id)
-                        #     claim_present = False
-                        #     if claims:
-                        #         for claim in claims:
-                        #             claim_status = check_claim(claim, val, qualifiers)
-                        #             if claim_status == 0:
-                        #                 source = check_references(claim, references)
-                        #                 if not source:
-                        #                     remove_claim(claim, statement)
-                        #                 else:
-                        #                     claim_present = True
-                        #             elif claim_status == 1:
-                        #                 remove_claim(claim, statement)
-                        #     if not claim_present:
-                        #         add_full_claim(statement, metric_val, qualifiers, references, summary)
-                        # elif results_cnt == 0:
-                        #     logging.info('0 wiki items found')
-                        #     #create method for adding new page for item
-                        # elif results_cnt > 1:
-                        #     logging.info('more than 1 wiki item found')
+                        if num_of_results == 1:
+                            if args.mode == 't':
+                                item_id = search_results['search'][0]['id']
+                            elif args.mode == 'p':
+                                item_url = search_results['results']['bindings'][0]['wd']['value']
+                                item_id = item_url.split('/')[-1]
+                            logging.info('Item found: {}'.format(item_id))
+                            item = pywikibot.ItemPage(repo, item_id)
+                            claims = get_claims(item)
+                            claim_present = False
+                            if claims:
+                                for claim in claims:
+                                    claim_status = check_claim(claim, metric_val, qualifiers)
+                                    if claim_status == 0:
+                                        source = check_references(claim, references)
+                                        if not source:
+                                            remove_claim(item, claim, statement)
+                                        else:
+                                            claim_present = True
+                                    elif claim_status == 1:
+                                        remove_claim(item, claim, statement)
+                            if not claim_present:
+                                if not args.mode.debug:
+                                    add_full_claim(item, statement, metric_val, qualifiers, references, summary)
+                        elif num_of_results == 0:
+                            logging.info('0 wiki items found')
+                            #create method for adding new page for item
+                        elif num_of_results > 1:
+                            logging.info('More than 1 wiki item found')
             else:
                 logging.info('Config item not enabled')
     else:

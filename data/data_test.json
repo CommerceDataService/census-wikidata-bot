@@ -5,13 +5,12 @@
         "response": "GEONAME,POP,state",
         "get": "GEONAME,POP",
         "for": "state:*",
-        "sparql": "SELECT * WHERE {?wd wdt:P901 XXX.}",
         "summary": "Adding 2015 state population claim",
         "items": [
             {
                 "wiki_lookup_key": {
-                    "beg_val": "US",
-                    "api_cols": [2],
+                    "beg_val": "",
+                    "api_cols": [0],
                     "end_val": ""
                 },
                 "api_value_column": 1,
@@ -30,18 +29,17 @@
         ]
     },
     {
-        "enabled": true,
+        "enabled": false,
         "api_url": "http://api.census.gov/data/2015/pep/population",
         "response": "GEONAME,POP,state,county",
         "get": "GEONAME,POP",
         "for": "county:*",
-        "sparql": "SELECT * WHERE {?wd wdt:P882 XXX.}",
         "summary": "Adding 2015 county population claim",
         "items":[
             {
                 "wiki_lookup_key": {
                     "beg_val": "",
-                    "api_cols": [2,3],
+                    "api_cols": [0],
                     "end_val": ""
                 },
                 "api_value_column": 1,
