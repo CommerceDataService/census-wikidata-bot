@@ -276,27 +276,27 @@ if __name__ == '__main__':
                             item_url = search_results['results']['bindings'][0]['wd']['value']
                             item_id = pywikibot.ItemPage(repo, item_url.split('/')[-1])
                             logging.info('Item ID: {}'.format(item_id))
-                            claims = get_claims(item_id)
-                            claim_present = False
-                            if claims:
-                                for claim in claims:
-                                    claim_status = check_claim(claim, val, qualifiers)
-                                    if claim_status == 0:
-                                        source = check_references(claim, references)
-                                        if not source:
-                                            remove_claim(claim, statement)
-                                        else:
-                                            claim_present = True
-                                    elif claim_status == 1:
-                                        remove_claim(claim, statement)
-                            if not claim_present:
-                                add_full_claim(statement, metric_val, qualifiers, references, summary)
-                        elif results_cnt == 0:
-                            logging.info('0 wiki items found')
-                            #create method for adding new page for item
-                        elif results_cnt > 1:
-                            logging.info('more than 1 wiki item found')
+                        #     claims = get_claims(item_id)
+                        #     claim_present = False
+                        #     if claims:
+                        #         for claim in claims:
+                        #             claim_status = check_claim(claim, val, qualifiers)
+                        #             if claim_status == 0:
+                        #                 source = check_references(claim, references)
+                        #                 if not source:
+                        #                     remove_claim(claim, statement)
+                        #                 else:
+                        #                     claim_present = True
+                        #             elif claim_status == 1:
+                        #                 remove_claim(claim, statement)
+                        #     if not claim_present:
+                        #         add_full_claim(statement, metric_val, qualifiers, references, summary)
+                        # elif results_cnt == 0:
+                        #     logging.info('0 wiki items found')
+                        #     #create method for adding new page for item
+                        # elif results_cnt > 1:
+                        #     logging.info('more than 1 wiki item found')
             else:
-                print('not enabled')
+                logging.info('Config item not enabled')
     else:
-        logging.error('data file did not load any claims to iterate over')
+        logging.error('Data file did not load any claims to iterate over')
