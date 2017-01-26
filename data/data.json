@@ -2,6 +2,7 @@
     {
         "enabled": true,
         "api_url": "http://api.census.gov/data/2015/pep/population",
+        "year": [2015],
         "response": "GEONAME,POP,state",
         "get": "GEONAME,POP",
         "for": "state:*",
@@ -19,11 +20,11 @@
                 "content": {
                     "qualifiers": [
                         ["P585", ["time", 2015]],
-                        ["P459", ["item", "Q637413"]]
+                        ["P459", ["item", "Q15911027"]]
                     ],
                     "references": {
-                        "P248": ["id", "Q463769"],
-                        "P854": ["url", "http://www.census.gov/data/developers/data-sets/popest-popproj/popest.html"]
+                        "P248": ["id", "Q7229779"],
+                        "P854": ["url", "https://www.census.gov/programs-surveys/popest.html"]
                     }
                 }
             }
@@ -32,6 +33,7 @@
     {
         "enabled": false,
         "api_url": "http://api.census.gov/data/2015/pep/population",
+        "year": [2015],
         "response": "POP, GEONAME, state, county",
         "get": "POP,GEONAME",
         "for": "county:*",
@@ -49,11 +51,11 @@
                 "content": {
                     "qualifiers": [
                         ["P66", ["time", 2015]],
-                        ["P144", ["item", "Q32616"]]
+                        ["P144", ["item", "Q15911027"]]
                     ],
                     "references": {
-                        "P149": ["id", "Q32615"],
-                        "P93": ["url", "http://www.census.gov/data/developers/data-sets/popest-popproj/popest.html"]
+                        "P149": ["id", "Q7229779"],
+                        "P93": ["url", "https://www.census.gov/programs-surveys/popest.html"]
                     }
                 }
             }

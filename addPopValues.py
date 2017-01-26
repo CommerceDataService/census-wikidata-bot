@@ -16,10 +16,10 @@ def get_census_values(api_url, get_var, for_var):
         r = requests.get(api_url, params=payload)
         return r.json()
     except requests.exceptions.RequestException as e:
-        logging.error(e)
+        logging.error('General Exception: {}'.format(e))
         sys.exit(1)
     except IOError as err:
-        logging.error(err)
+        logging.error('IOError: {}'.format(err))
 
 def find_wiki_items(sparql_query, item_key):
     try:
@@ -62,31 +62,39 @@ def check_claim(claim, val, qualifiers):
         #1 - remove claim
         #2 - skip claim
         claim_status = 0
+
+        #This code is still specific to first pass of script.  Need to make this
+        #generic so that it works for any number of qualifiers being passed in!!!!
+        #Also need to probably change the qualifiers in config to be dict with Value
+        #as list
+
         p_in_time = qualifiers[0][0]
         det_method = qualifiers[1][0]
-        logging.info('Entry value: {}'.format(claim.getTarget().amount))
+
+        amt = claim.getTarget().amount
         if p_in_time in claim.qualifiers:
-            logging.info('Entry year: {}'.format(claim.qualifiers[p_in_time][0].getTarget().year))
-            if claim.qualifiers[p_in_time][0].getTarget().year == qualifiers[0][1][1]:
-                logging.info('Claim value: {}, Value from API: {}'.format(claim.getTarget().amount, val))
-                if claim.getTarget().amount == val:
+            clm_yr = claim.qualifiers[p_in_time][0].getTarget().year
+            if clm_yr == qualifiers[0][1][1]:
+                if amt == val:
                     if det_method in claim.qualifiers:
                         if claim.qualifiers[det_method][0].getTarget().id != qualifiers[1][1][1]:
-                            logging.info('Qualifier {} value incorrect'.format(qualifiers[1][0]))
+                            logging.info('Status [1] - Qualifier [{}] value incorrect'.format(qualifiers[1][0]))
                             claim_status = 1
                     else:
-                        logging.info('Qualifier determination method missing')
+                        logging.info('Status [1] - Qualifier [{}] missing'.format(qualifiers[1][0]))
                         claim_status = 1
                 else:
-                    logging.info('Statement claim value incorrect')
+                    logging.info('Year: {}, Value: {:,}'.format(clm_yr, amt))
+                    logging.info('Status [1] - Value incorrect')
                     claim_status = 1
             else:
-                logging.info('value should be skipped')
+                logging.info('Status [2] - Skipping Claim')
                 claim_status = 2
         else:
-            logging.info('Qualifier point in time missing')
+            logging.info('Status [1] - Qualifier [point in time] missing')
             claim_status = 1
-        logging.info('Status of Claim: {}'.format(claim_status))
+        if claim_status == 0:
+            logging.info('Status [0] - Matching Claim')
         return claim_status
     except:
         raise
@@ -94,11 +102,11 @@ def check_claim(claim, val, qualifiers):
 def check_references(claim, references):
     source_claims = claim.getSources()
     if len(source_claims) != 1:
-        logging.info('Incorrect number of references')
+        logging.info('Claim contains incorrect number of references')
         return False
     else:
         if len(source_claims[0]) != len(references):
-            logging.info('Incorrect number of items in reference')
+            logging.info('Claim contains incorrect number of items in reference')
             return False
         else:
             for k, v in source_claims[0].items():
@@ -110,10 +118,10 @@ def check_references(claim, references):
                     elif prop_type == 'url':
                         source_val = v[0].getTarget()
                     if source_val != references[k][1]:
-                        logging.info('Value incorrect for key: {}'.format(k))
+                        logging.info('Reference value [{:,}] incorrect for key: {}'.format(v[0].getTarget(), k))
                         return False
                 else:
-                    logging.info('Wrong item contained in reference')
+                    logging.info('Reference contained incorrect property')
                     return False
     return True
 
@@ -126,13 +134,9 @@ def remove_claim(item, claim, prop):
         return False
 
 def create_claim(item, prop, prop_val, summary):
-    logging.info('before newclaim')
     newclaim = pywikibot.Claim(repo, prop)
-    logging.info('before wb_quant')
     wb_quant = pywikibot.WbQuantity(prop_val)
-    logging.info('before setTarget')
     newclaim.setTarget(wb_quant)
-    logging.info('before addClaim')
     item.addClaim(newclaim, bot=True, summary=summary)
     logging.info('New claim created')
     return newclaim
@@ -146,7 +150,7 @@ def create_qualifiers(claim, qualifiers):
             trgt_item = pywikibot.ItemPage(repo, q[1][1])
         qualifier.setTarget(trgt_item)
         claim.addQualifier(qualifier)
-        logging.info('Qualifier: {} added'.format(q[0]))
+        logging.info('Qualifier: {} added to claim'.format(q[0]))
     return True
 
 def create_references(claim, references):
@@ -162,7 +166,7 @@ def create_references(claim, references):
             source_claim.setTarget(trgt_item)
             source_claim_list.append(source_claim)
         claim.addSources(source_claim_list)
-        logging.info('References added')
+        logging.info('{} References added to claim'.format(len(source_claim_list)))
         return True
     except:
         return False
@@ -172,12 +176,11 @@ def add_full_claim(item, statement, metric_val, qualifiers, references, summary)
         newclaim = create_claim(item, statement, metric_val, summary)
         create_qualifiers(newclaim, qualifiers)
         create_references(newclaim, references)
-        logging.info('Full claim addition complete')
+        logging.info('Full claim successfully added')
     except:
         raise
 
 def loadConfig(data_file):
-    #global api_url, get_var, for_var, summary, statement, references, qualifiers
     try:
         with open(data_file) as df:
             jsondata = json.load(df)
@@ -190,9 +193,8 @@ def getKeyVals(wiki_lookup_key, val):
     for item in wiki_lookup_key['api_cols']:
         val_key += val[item]
     key = wiki_lookup_key['beg_val']+val_key+wiki_lookup_key['end_val']
+    logging.info('Search Key: {}'.format(key))
     return key
-
-#def processClaim():
 
 if __name__ == '__main__':
     scriptpath = os.path.dirname(os.path.abspath(__file__))
@@ -221,17 +223,14 @@ if __name__ == '__main__':
                         default=False
     )
     args = parser.parse_args()
-    logging.info("--SCRIPT ARGUMENTS--------------")
+    logging.info("-------- [SCRIPT ARGUMENTS] --------")
     if args.mode == 't':
-        logging.info('-- Mode set to: TEST')
+        logging.info('      BOT MODE: TEST')
     elif args.mode == 'p':
-        logging.info('-- Mode set to: PROD')
-    logging.info('Debug mode set to: {}'.format(args.debug))
-    logging.info("-- [JOB START]  ----------------")
-
-    # requests_log = logging.getLogger("requests.packages.urllib3")
-    # requests_log.setLevel(logging.DEBUG)
-    # requests_log.propagate = True
+        logging.info('      BOT MODE: PROD')
+    if args.debug:
+        logging.info('      !RUNNING IN DEBUG MODE!')
+    logging.info("----------- [JOB START] -----------")
 
     if args.mode == 't':
         site = pywikibot.Site('test', 'wikidata')
@@ -243,7 +242,7 @@ if __name__ == '__main__':
     data = loadConfig(data_file)
     repo = site.data_repository()
     if data:
-        for api_item in data:
+        for i, api_item in enumerate(data):
             if api_item['enabled']:
                 api_url = api_item['api_url']
                 logging.info('[api_url]: {}'.format(api_url))
@@ -251,13 +250,17 @@ if __name__ == '__main__':
                 logging.info('[get_var]: {}'.format(get_var))
                 for_var = api_item['for']
                 logging.info('[for_var]: {}'.format(for_var))
-                summary = api_item['summary']
                 response = api_item['response']
                 logging.info('[Expected response]: {}'.format(response))
+                summary = api_item['summary']
                 logging.info('[summary]: {}'.format(summary))
                 if args.mode == 'p':
                     sparql = api_item['sparql']
                     logging.info('[sparql]: {}'.format(sparql))
+
+                #!!Add in loop for YEAR value and make sure point in time qualifier is variable
+                #to account for specific year!!
+
                 for item in api_item['items']:
                     wiki_lookup_key = item['wiki_lookup_key']
                     logging.info('[wiki_lookup_key]: {}'.format(wiki_lookup_key))
@@ -266,23 +269,22 @@ if __name__ == '__main__':
                     statement = item['statement']
                     logging.info('[statement]: {}'.format(statement))
                     content = item['content']
-                    references = content['references']
+                    #references = content['references']
+                    references = item['content']['references']
                     logging.info('[references]: {}'.format(references))
-                    qualifiers = content.get('qualifiers')
+                    #qualifiers = content.get('qualifiers')
+                    qualifiers = item['content']['qualifiers']
                     logging.info('[qualifiers]: {}'.format(qualifiers))
 
                     #process each item
                     metric_values = get_census_values(api_url, get_var, for_var)
                     logging.info('Number of items in API Response: {}'.format(len(metric_values[1:])))
-                    for val in metric_values[1:]:
-                        logging.info(val)
+                    for i, val in enumerate(metric_values[1:]):
+                        logging.info('[ITEM {}]: {}'.format(i, val))
                         metric_val = int(val[api_value_column])
                         if args.mode == 't':
-                            #need to account for the split operation in the config file
-                            #in case future key values need operations on them
-                            #and contain common logic in getKeyVals function
                             key = val[0].split(',')[0]+', United States'
-                            logging.info('Search key: {}'.format(key))
+                            logging.info('Searching for ID: {}'.format(key))
                             search_results = find_test_wiki_items(site, key)
                             num_of_results = len(search_results['search'])
                         elif args.mode == 'p':
@@ -296,30 +298,42 @@ if __name__ == '__main__':
                             elif args.mode == 'p':
                                 item_url = search_results['results']['bindings'][0]['wd']['value']
                                 item_id = item_url.split('/')[-1]
-                            logging.info('Item found: {}'.format(item_id))
+                            logging.info('1 Item found [ID] - {}'.format(item_id))
                             item = pywikibot.ItemPage(repo, item_id)
                             claims = get_claims(item)
                             claim_present = False
                             if claims:
-                                for claim in claims:
+                                for i, claim in enumerate(claims):
+                                    logging.info('Claim #{}'.format(i))
                                     claim_status = check_claim(claim, metric_val, qualifiers)
                                     if claim_status == 0:
                                         source = check_references(claim, references)
                                         if not source:
-                                            remove_claim(item, claim, statement)
+                                            if args.debug:
+                                                logging.info('DEBUG - Claim will be removed')
+                                            else:
+                                                remove_claim(item, claim, statement)
+                                                #add code to add to watch list after alteration
                                         else:
                                             claim_present = True
                                     elif claim_status == 1:
-                                        remove_claim(item, claim, statement)
+                                        if args.debug:
+                                            logging.info('DEBUG - Claim will be removed')
+                                        else:
+                                            remove_claim(item, claim, statement)
+                                            #add code to add to watch list after alteration
                             if not claim_present:
-                                if not args.mode.debug:
+                                if args.debug:
+                                    logging.info('DEBUG - Add new claim')
+                                if not args.debug:
                                     add_full_claim(item, statement, metric_val, qualifiers, references, summary)
+                                    #add code to add to watch list after alteration
                         elif num_of_results == 0:
-                            logging.info('0 wiki items found')
+                            logging.info('0 ITEMS FOUND')
                             #create method for adding new page for item
                         elif num_of_results > 1:
-                            logging.info('More than 1 wiki item found')
+                            logging.info('MORE THAN 1 ITEM FOUND')
             else:
-                logging.info('Config item not enabled')
+                logging.info('[API CALL #{} NOT ENABLED]'.format(i))
     else:
         logging.error('Data file did not load any claims to iterate over')
