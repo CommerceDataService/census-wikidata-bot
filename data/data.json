@@ -1,13 +1,13 @@
 [
     {
         "enabled": true,
-        "api_url": "http://api.census.gov/data/2015/pep/population",
-        "year": [2015],
+        "api_url": "http://api.census.gov/data/XXXX/pep/population",
+        "year": ["2015"],
         "response": "GEONAME,POP,state",
         "get": "GEONAME,POP",
         "for": "state:*",
         "sparql": "SELECT * WHERE {?wd wdt:P901 XXX.}",
-        "summary": "Adding 2015 state population claim",
+        "summary": "Adding XXXX state population claim",
         "items": [
             {
                 "wiki_lookup_key": {
@@ -19,7 +19,7 @@
                 "statement": "P1082",
                 "content": {
                     "qualifiers": [
-                        ["P585", ["time", 2015]],
+                        ["P585", ["time"]],
                         ["P459", ["item", "Q15911027"]]
                     ],
                     "references": {
@@ -31,14 +31,14 @@
         ]
     },
     {
-        "enabled": false,
-        "api_url": "http://api.census.gov/data/2015/pep/population",
-        "year": [2015],
+        "enabled": true,
+        "api_url": "http://api.census.gov/data/XXXX/pep/population",
+        "year": ["2015"],
         "response": "POP, GEONAME, state, county",
         "get": "POP,GEONAME",
         "for": "county:*",
         "sparql": "SELECT * WHERE {?wd wdt:P882 XXX.}",
-        "summary": "Adding 2015 county population claim",
+        "summary": "Adding XXXX county population claim",
         "items":[
             {
                 "wiki_lookup_key": {
@@ -46,11 +46,11 @@
                     "api_cols": [2,3],
                     "end_val": ""
                 },
-                "api_value_column": 1,
+                "api_value_column": 0,
                 "statement": "P63",
                 "content": {
                     "qualifiers": [
-                        ["P66", ["time", 2015]],
+                        ["P66", ["time"]],
                         ["P144", ["item", "Q15911027"]]
                     ],
                     "references": {

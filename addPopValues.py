@@ -21,10 +21,10 @@ def get_census_values(api_url, get_var, for_var):
     except IOError as err:
         logging.error('IOError: {}'.format(err))
 
-def find_wiki_items(sparql_query, item_key):
+def find_wiki_items(sparql, item_key):
     try:
         sparql_url = 'https://query.wikidata.org/sparql'
-        payload = {'query': sparql.replace("XXX", '\"'+item_key+'\"', 1),\
+        payload = {'query': sparql.replace('XXX', '\"'+item_key+'\"', 1),\
             'format': 'JSON'}
         r = requests.get(sparql_url, params = payload)
         return r.json()
@@ -56,7 +56,7 @@ def get_claims(item):
     except:
         raise
 
-def check_claim(claim, val, qualifiers):
+def check_claim(claim, val, qualifiers, year):
     try:
         #0 - claim matches
         #1 - remove claim
@@ -74,7 +74,8 @@ def check_claim(claim, val, qualifiers):
         amt = claim.getTarget().amount
         if p_in_time in claim.qualifiers:
             clm_yr = claim.qualifiers[p_in_time][0].getTarget().year
-            if clm_yr == qualifiers[0][1][1]:
+            #if clm_yr == qualifiers[0][1][1]:
+            if clm_yr == int(year):
                 if amt == val:
                     if det_method in claim.qualifiers:
                         if claim.qualifiers[det_method][0].getTarget().id != qualifiers[1][1][1]:
@@ -180,7 +181,7 @@ def add_full_claim(item, statement, metric_val, qualifiers, references, summary)
     except:
         raise
 
-def loadConfig(data_file):
+def load_config(data_file):
     try:
         with open(data_file) as df:
             jsondata = json.load(df)
@@ -188,13 +189,16 @@ def loadConfig(data_file):
     except:
         raise
 
-def getKeyVals(wiki_lookup_key, val):
+def get_key_vals(wiki_lookup_key, val):
     val_key = ''
     for item in wiki_lookup_key['api_cols']:
         val_key += val[item]
     key = wiki_lookup_key['beg_val']+val_key+wiki_lookup_key['end_val']
     logging.info('Search Key: {}'.format(key))
     return key
+
+def insertYearValue(value, year):
+    return value.replace('XXXX', year)
 
 if __name__ == '__main__':
     scriptpath = os.path.dirname(os.path.abspath(__file__))
@@ -214,13 +218,15 @@ if __name__ == '__main__':
                         required=True,
                         type=str,
                         choices=['t', 'p'],
+                        help='Pass a t flag for test mode or a p flag for production mode'
     )
     parser.add_argument(
                         '-d',
                         '--debug',
                         required=False,
                         action='store_true',
-                        default=False
+                        default=False,
+                        help='Pass this flag to set mode of bot to debug (means there will be no actual changes to the Wiki)'
     )
     args = parser.parse_args()
     logging.info("-------- [SCRIPT ARGUMENTS] --------")
@@ -239,100 +245,102 @@ if __name__ == '__main__':
         site = pywikibot.Site('wikidata', 'wikidata')
         data_file = os.path.join(scriptpath, "data", "data.json")
 
-    data = loadConfig(data_file)
+    data = load_config(data_file)
     repo = site.data_repository()
     if data:
         for i, api_item in enumerate(data):
             if api_item['enabled']:
-                api_url = api_item['api_url']
-                logging.info('[api_url]: {}'.format(api_url))
-                get_var = api_item['get']
-                logging.info('[get_var]: {}'.format(get_var))
-                for_var = api_item['for']
-                logging.info('[for_var]: {}'.format(for_var))
-                response = api_item['response']
-                logging.info('[Expected response]: {}'.format(response))
-                summary = api_item['summary']
-                logging.info('[summary]: {}'.format(summary))
-                if args.mode == 'p':
-                    sparql = api_item['sparql']
-                    logging.info('[sparql]: {}'.format(sparql))
+                    logging.info('***************NEW API ITEM***************')
+                    api_url = api_item['api_url']
+                    logging.info('[api_url]: {}'.format(api_url))
+                    get_var = api_item['get']
+                    logging.info('[get_var]: {}'.format(get_var))
+                    for_var = api_item['for']
+                    logging.info('[for_var]: {}'.format(for_var))
+                    response = api_item['response']
+                    logging.info('[Expected response]: {}'.format(response))
+                    summary = api_item['summary']
+                    logging.info('[summary]: {}'.format(summary))
+                    if args.mode == 'p':
+                        sparql = api_item['sparql']
+                        logging.info('[sparql]: {}'.format(sparql))
+                    for year in api_item['year']:
+                        logging.info('**********NEW YEAR: {}**********'.format(year))
+                        summary = insertYearValue(summary, year)
+                        api_url = insertYearValue(api_url, year)
+                        for item in api_item['items']:
+                            logging.info('*****NEW ITEM*****')
+                            wiki_lookup_key = item['wiki_lookup_key']
+                            logging.info('[wiki_lookup_key]: {}'.format(wiki_lookup_key))
+                            api_value_column = item['api_value_column']
+                            logging.info('[api_value_column]: {}'.format(api_value_column))
+                            statement = item['statement']
+                            logging.info('[statement]: {}'.format(statement))
+                            content = item['content']
+                            #references = content['references']
+                            references = item['content']['references']
+                            logging.info('[references]: {}'.format(references))
+                            #qualifiers = content.get('qualifiers')
+                            qualifiers = item['content']['qualifiers']
+                            logging.info('[qualifiers]: {}'.format(qualifiers))
 
-                #!!Add in loop for YEAR value and make sure point in time qualifier is variable
-                #to account for specific year!!
-
-                for item in api_item['items']:
-                    wiki_lookup_key = item['wiki_lookup_key']
-                    logging.info('[wiki_lookup_key]: {}'.format(wiki_lookup_key))
-                    api_value_column = item['api_value_column']
-                    logging.info('[api_value_column]: {}'.format(api_value_column))
-                    statement = item['statement']
-                    logging.info('[statement]: {}'.format(statement))
-                    content = item['content']
-                    #references = content['references']
-                    references = item['content']['references']
-                    logging.info('[references]: {}'.format(references))
-                    #qualifiers = content.get('qualifiers')
-                    qualifiers = item['content']['qualifiers']
-                    logging.info('[qualifiers]: {}'.format(qualifiers))
-
-                    #process each item
-                    metric_values = get_census_values(api_url, get_var, for_var)
-                    logging.info('Number of items in API Response: {}'.format(len(metric_values[1:])))
-                    for i, val in enumerate(metric_values[1:]):
-                        logging.info('[ITEM {}]: {}'.format(i, val))
-                        metric_val = int(val[api_value_column])
-                        if args.mode == 't':
-                            key = val[0].split(',')[0]+', United States'
-                            logging.info('Searching for ID: {}'.format(key))
-                            search_results = find_test_wiki_items(site, key)
-                            num_of_results = len(search_results['search'])
-                        elif args.mode == 'p':
-                            key = getKeyVals(wiki_lookup_key, val)
-                            search_results = find_wiki_items(sparql, key)
-                            num_of_results = len(search_results['results']['bindings'])
-                        #if only single search result
-                        if num_of_results == 1:
-                            if args.mode == 't':
-                                item_id = search_results['search'][0]['id']
-                            elif args.mode == 'p':
-                                item_url = search_results['results']['bindings'][0]['wd']['value']
-                                item_id = item_url.split('/')[-1]
-                            logging.info('1 Item found [ID] - {}'.format(item_id))
-                            item = pywikibot.ItemPage(repo, item_id)
-                            claims = get_claims(item)
-                            claim_present = False
-                            if claims:
-                                for i, claim in enumerate(claims):
-                                    logging.info('Claim #{}'.format(i))
-                                    claim_status = check_claim(claim, metric_val, qualifiers)
-                                    if claim_status == 0:
-                                        source = check_references(claim, references)
-                                        if not source:
-                                            if args.debug:
-                                                logging.info('DEBUG - Claim will be removed')
-                                            else:
-                                                remove_claim(item, claim, statement)
-                                                #add code to add to watch list after alteration
-                                        else:
-                                            claim_present = True
-                                    elif claim_status == 1:
+                            #process each item
+                            metric_values = get_census_values(api_url, get_var, for_var)
+                            logging.info('Number of items in API Response: {}'.format(len(metric_values[1:])))
+                            for i, val in enumerate(metric_values[1:]):
+                                logging.info('[ITEM {}]: {}'.format(i, val))
+                                metric_val = int(val[api_value_column])
+                                if args.mode == 't':
+                                    key = val[0].split(',')[0]+', United States'
+                                    logging.info('Searching for ID: {}'.format(key))
+                                    search_results = find_test_wiki_items(site, key)
+                                    num_of_results = len(search_results['search'])
+                                elif args.mode == 'p':
+                                    key = get_key_vals(wiki_lookup_key, val)
+                                    search_results = find_wiki_items(sparql, key)
+                                    num_of_results = len(search_results['results']['bindings'])
+                                #if only single search result
+                                if num_of_results == 1:
+                                    if args.mode == 't':
+                                        item_id = search_results['search'][0]['id']
+                                    elif args.mode == 'p':
+                                        item_url = search_results['results']['bindings'][0]['wd']['value']
+                                        item_id = item_url.split('/')[-1]
+                                    logging.info('1 Item found [ID] - {}'.format(item_id))
+                                    item = pywikibot.ItemPage(repo, item_id)
+                                    claims = get_claims(item)
+                                    claim_present = False
+                                    if claims:
+                                        for i, claim in enumerate(claims):
+                                            logging.info('Claim #{}'.format(i+1))
+                                            claim_status = check_claim(claim, metric_val, qualifiers, year)
+                                            if claim_status == 0:
+                                                source = check_references(claim, references)
+                                                if not source:
+                                                    if args.debug:
+                                                        logging.info('DEBUG - Claim will be removed')
+                                                    else:
+                                                        remove_claim(item, claim, statement)
+                                                        #add code to add to watch list after alteration
+                                                else:
+                                                    claim_present = True
+                                            elif claim_status == 1:
+                                                if args.debug:
+                                                    logging.info('DEBUG - Claim will be removed')
+                                                else:
+                                                    remove_claim(item, claim, statement)
+                                                    #add code to add to watch list after alteration
+                                    if not claim_present:
                                         if args.debug:
-                                            logging.info('DEBUG - Claim will be removed')
-                                        else:
-                                            remove_claim(item, claim, statement)
+                                            logging.info('DEBUG - Add new claim')
+                                        if not args.debug:
+                                            add_full_claim(item, statement, metric_val, qualifiers, references, summary)
                                             #add code to add to watch list after alteration
-                            if not claim_present:
-                                if args.debug:
-                                    logging.info('DEBUG - Add new claim')
-                                if not args.debug:
-                                    add_full_claim(item, statement, metric_val, qualifiers, references, summary)
-                                    #add code to add to watch list after alteration
-                        elif num_of_results == 0:
-                            logging.info('0 ITEMS FOUND')
-                            #create method for adding new page for item
-                        elif num_of_results > 1:
-                            logging.info('MORE THAN 1 ITEM FOUND')
+                                elif num_of_results == 0:
+                                    logging.info('0 ITEMS FOUND')
+                                    #create method for adding new page for item
+                                elif num_of_results > 1:
+                                    logging.info('MORE THAN 1 ITEM FOUND')
             else:
                 logging.info('[API CALL #{} NOT ENABLED]'.format(i))
     else:

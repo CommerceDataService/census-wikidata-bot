@@ -41,13 +41,13 @@
             {
                 "wiki_lookup_key": {
                     "beg_val": "",
-                    "api_cols": [0],
+                    "api_cols": [2,3],
                     "end_val": ""
                 },
                 "api_value_column": 1,
                 "statement": "P63",
                 "content": {
-                    "qualfiers": [
+                    "qualifiers": [
                         ["P66",["time", 2015]],
                         ["P144", ["item", "Q32616"]]
                     ],
