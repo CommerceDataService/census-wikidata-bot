@@ -1,2 +1,5 @@
 #config file
 user-config.py
+apicache/
+throttle.ctrl
+pywikibot.lwp
