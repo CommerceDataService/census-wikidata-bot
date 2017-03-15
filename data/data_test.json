@@ -1,8 +1,8 @@
 [
     {
-        "enabled": false,
-        "api_url": "http://api.census.gov/data/2015/pep/population",
-        "year": [2015],
+        "enabled": true,
+        "api_url": "http://api.census.gov/data/XXXX/pep/population",
+        "year": ["2015"],
         "response": "GEONAME,POP,state",
         "get": "GEONAME,POP",
         "for": "state:*",
@@ -18,7 +18,7 @@
                 "statement": "P63",
                 "content": {
                     "qualifiers": [
-                        ["P66",["time", 2015]],
+                        ["P66", ["time"]],
                         ["P144", ["item", "Q32616"]]
                     ],
                     "references": {
@@ -31,8 +31,8 @@
     },
     {
         "enabled": true,
-        "api_url": "http://api.census.gov/data/2015/pep/population",
-        "year": [2015],
+        "api_url": "http://api.census.gov/data/XXXX/pep/population",
+        "year": ["2015"],
         "response": "GEONAME,POP,state,county",
         "get": "GEONAME,POP",
         "for": "county:*",
@@ -48,7 +48,7 @@
                 "statement": "P63",
                 "content": {
                     "qualifiers": [
-                        ["P66",["time", 2015]],
+                        ["P66", ["time"]],
                         ["P144", ["item", "Q32616"]]
                     ],
                     "references": {

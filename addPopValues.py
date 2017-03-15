@@ -10,9 +10,9 @@ import pywikibot, json, os, requests, argparse, logging, time, json, sys
 from pywikibot.data import api
 
 
-def get_census_values(api_url, get_var, for_var):
+def get_census_values(api_url, get_var, for_var, api_key):
     try:
-        payload = {'get': get_var, 'for': for_var, 'key': os.environ['CENSUS']}
+        payload = {'get': get_var, 'for': for_var, 'key': api_key}
         r = requests.get(api_url, params=payload)
         return r.json()
     except requests.exceptions.RequestException as e:
@@ -62,19 +62,12 @@ def check_claim(claim, val, qualifiers, year):
         #1 - remove claim
         #2 - skip claim
         claim_status = 0
-
-        #This code is still specific to first pass of script.  Need to make this
-        #generic so that it works for any number of qualifiers being passed in!!!!
-        #Also need to probably change the qualifiers in config to be dict with Value
-        #as list
-
         p_in_time = qualifiers[0][0]
         det_method = qualifiers[1][0]
 
         amt = claim.getTarget().amount
         if p_in_time in claim.qualifiers:
             clm_yr = claim.qualifiers[p_in_time][0].getTarget().year
-            #if clm_yr == qualifiers[0][1][1]:
             if clm_yr == int(year):
                 if amt == val:
                     if det_method in claim.qualifiers:
@@ -94,8 +87,6 @@ def check_claim(claim, val, qualifiers, year):
         else:
             logging.info('Status [1] - Qualifier [point in time] missing')
             claim_status = 1
-        if claim_status == 0:
-            logging.info('Status [0] - Matching Claim')
         return claim_status
     except:
         raise
@@ -119,7 +110,8 @@ def check_references(claim, references):
                     elif prop_type == 'url':
                         source_val = v[0].getTarget()
                     if source_val != references[k][1]:
-                        logging.info('Reference value [{:,}] incorrect for key: {}'.format(v[0].getTarget(), k))
+                        #logging.info('Reference value [{:,}] incorrect for key: {}'.format(v[0].getTarget(), k))
+                        logging.info('Reference value [{}] incorrect for key: {}'.format(v[0].getTarget(), k))
                         return False
                 else:
                     logging.info('Reference contained incorrect property')
@@ -142,11 +134,11 @@ def create_claim(item, prop, prop_val, summary):
     logging.info('New claim created')
     return newclaim
 
-def create_qualifiers(claim, qualifiers):
+def create_qualifiers(claim, qualifiers, year):
     for q in qualifiers:
         qualifier = pywikibot.Claim(repo, q[0])
         if q[1][0] == 'time':
-            trgt_item = pywikibot.WbTime(q[1][1])
+            trgt_item = pywikibot.WbTime(int(year))
         elif q[1][0] == 'item':
             trgt_item = pywikibot.ItemPage(repo, q[1][1])
         qualifier.setTarget(trgt_item)
@@ -172,10 +164,10 @@ def create_references(claim, references):
     except:
         return False
 
-def add_full_claim(item, statement, metric_val, qualifiers, references, summary):
+def add_full_claim(item, statement, metric_val, qualifiers, references, summary, year):
     try:
         newclaim = create_claim(item, statement, metric_val, summary)
-        create_qualifiers(newclaim, qualifiers)
+        create_qualifiers(newclaim, qualifiers, year)
         create_references(newclaim, references)
         logging.info('Full claim successfully added')
     except:
@@ -244,7 +236,10 @@ if __name__ == '__main__':
     else:
         site = pywikibot.Site('wikidata', 'wikidata')
         data_file = os.path.join(scriptpath, "data", "data.json")
-
+    if os.environ['CENSUS']:
+        api_key = os.environ['CENSUS']
+    else:
+        sys.exit('CENSUS environment variable not set for API key.  Please set this environment variable and run script again.') 
     data = load_config(data_file)
     repo = site.data_repository()
     if data:
@@ -277,21 +272,24 @@ if __name__ == '__main__':
                             statement = item['statement']
                             logging.info('[statement]: {}'.format(statement))
                             content = item['content']
-                            #references = content['references']
                             references = item['content']['references']
                             logging.info('[references]: {}'.format(references))
-                            #qualifiers = content.get('qualifiers')
                             qualifiers = item['content']['qualifiers']
                             logging.info('[qualifiers]: {}'.format(qualifiers))
 
                             #process each item
-                            metric_values = get_census_values(api_url, get_var, for_var)
+                            metric_values = get_census_values(api_url, get_var, for_var, api_key)
                             logging.info('Number of items in API Response: {}'.format(len(metric_values[1:])))
                             for i, val in enumerate(metric_values[1:]):
                                 logging.info('[ITEM {}]: {}'.format(i, val))
                                 metric_val = int(val[api_value_column])
                                 if args.mode == 't':
-                                    key = val[0].split(',')[0]+', United States'
+                                    #this code is specific to state and county right now
+                                    if for_var == 'state:*':
+                                        key = val[0].split(',')[0]+', United States'
+                                    elif for_var == 'county:*':
+                                        vals = val[0].split(',')
+                                        key = vals[0]+','+vals[1]
                                     logging.info('Searching for ID: {}'.format(key))
                                     search_results = find_test_wiki_items(site, key)
                                     num_of_results = len(search_results['search'])
@@ -312,7 +310,7 @@ if __name__ == '__main__':
                                     claim_present = False
                                     if claims:
                                         for i, claim in enumerate(claims):
-                                            logging.info('Claim #{}'.format(i+1))
+                                            logging.info('CLAIM #{}'.format(i+1))
                                             claim_status = check_claim(claim, metric_val, qualifiers, year)
                                             if claim_status == 0:
                                                 source = check_references(claim, references)
@@ -334,7 +332,7 @@ if __name__ == '__main__':
                                         if args.debug:
                                             logging.info('DEBUG - Add new claim')
                                         if not args.debug:
-                                            add_full_claim(item, statement, metric_val, qualifiers, references, summary)
+                                            add_full_claim(item, statement, metric_val, qualifiers, references, summary, year)
                                             #add code to add to watch list after alteration
                                 elif num_of_results == 0:
                                     logging.info('0 ITEMS FOUND')
