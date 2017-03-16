@@ -1,12 +1,12 @@
 [
     {
-        "enabled": true,
+        "enabled": false,
         "api_url": "http://api.census.gov/data/XXXX/pep/population",
         "year": ["2015"],
         "response": "GEONAME,POP,state",
         "get": "GEONAME,POP",
         "for": "state:*",
-        "sparql": "SELECT * WHERE {?wd wdt:P901 XXX.}",
+        "sparql": "SELECT * WHERE {?wd wdt:P882 XXX.}",
         "summary": "Adding XXXX state population claim",
         "items": [
             {
@@ -47,15 +47,15 @@
                     "end_val": ""
                 },
                 "api_value_column": 0,
-                "statement": "P63",
+                "statement": "P1082",
                 "content": {
                     "qualifiers": [
-                        ["P66", ["time"]],
-                        ["P144", ["item", "Q15911027"]]
+                        ["P585", ["time"]],
+                        ["P459", ["item", "Q15911027"]]
                     ],
                     "references": {
-                        "P149": ["id", "Q7229779"],
-                        "P93": ["url", "https://www.census.gov/programs-surveys/popest.html"]
+                        "P248": ["id", "Q7229779"],
+                        "P854": ["url", "https://www.census.gov/programs-surveys/popest.html"]
                     }
                 }
             }
