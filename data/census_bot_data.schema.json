@@ -1,0 +1,177 @@
+{
+	"type":"object",
+	"$schema": "http://json-schema.org/draft-03/schema",
+	"id": "http://jsonschema.net",
+	"required":false,
+	"properties":{
+		"api_url": {
+			"type":"string",
+      "description": "URL of the Census API that the bot will be pulling data from.  Please use 'XXXX' for the year value in the URL.",
+			"id": "api_url",
+			"required":true
+		},
+		"enabled": {
+			"type":"boolean",
+      "description": "Denotes whether the bot should process this value or not.",
+			"id": "enabled",
+			"required":true
+		},
+		"for": {
+			"type":"string",
+      "description": "This item represents the 'for' parameter that is passed to the 'api_url'.",
+			"id": "for",
+			"required":true
+		},
+		"get": {
+			"type":"string",
+      "description": "This item represents the 'get' parameter that is passed to the 'api_url'.  Each value is to be separated by a comma.",
+			"id": "get",
+			"required":true
+		},
+		"items": {
+			"type":"array",
+      "description": "Each item in this array represent an item in Wikidata/Wikipedia that needs to be addressed with the bot for a particular API call.",
+			"minitems": "1",
+			"id": "items",
+			"required":true,
+			"items":
+				{
+					"type":"object",
+					"id": "http://jsonschema.net/items/0",
+					"required":false,
+					"properties":{
+						"api_value_column": {
+							"type":"number",
+							"description": "This item represents the column in the API response that contains the main value that should be written to the Wiki.",
+							"id": "api_value_column",
+							"required":true
+						},
+						"content": {
+							"type":"object",
+							"description": "This field contains all associated values that should be written for each entry made in a Wiki.  ",
+							"id": "content",
+							"required":true,
+							"properties":{
+								"qualifiers": {
+									"type":"array",
+									"description": "This array represents qualifier key/value statements for a given Wiki entry.",
+									"minitems": "1",
+									"id": "qualifiers",
+									"required":true,
+									"items":
+										{
+											"type":"array",
+											"description": "This array represents the qualifer for each statement.  Each array consists of a property value as the first item in the list and another array as the second item.  The second item (array) will consist of one to two items.  The first item is the property type (e.g., 'time', 'item') and the second value is the associated entry.  In the case of a property of type 'time', the second item in this array should not be included (this value will come from the year array parameter which is dynamic).  An example of an entry for this array is: [property, [property type, value]]",
+											"minitems": "1",
+											"id": "qualifiers/0",
+											"required":true
+										}
+								},
+								"references": {
+									"type":"object",
+									"id": "references",
+									"required":false,
+									"properties":{
+										"patternProperties": {
+								        "^P[0-9]+": {
+								            "type": "object",
+								            "required": true,
+														"properties":{
+																"type":"array",
+																"id": "references",
+																"required":true,
+																"items":
+																	{
+																		"type":"string",
+																		"id": "http://jsonschema.net/items/0/content/references/P248/0",
+																		"required":true
+																	}
+										}
+									}
+								}
+							}
+						},
+						"statement": {
+							"type":"string",
+							"description": "This field represents the property value for the statement that needs to be written to the Wiki.  This can be obtained from the wiki site.",
+							"id": "statement",
+							"required":true,
+							"patternProperties": {
+								"^P[0-9]+"
+							}
+						},
+						"wiki_lookup_key": {
+							"type":"object",
+							"description": "This object represents the lookup key that will be used in the SPARQL query to find each Wiki entry.  It is a combination of the preceding value('beg_val') plus the api_cols (in order) plus the following value ('end_val').",
+              "minitems": "3",
+              "maxitems": "3",
+							"id": "wiki_lookup_key",
+							"required":true,
+							"properties":{
+								"api_cols": {
+									"type":"array",
+									"description": "This array holds the columns from the API response that should be combined to create the lookup key for the SPARQL query.  The values in this array should be ints and should also be in the necessary order.",
+									"minitems": "1",
+									"maxitems": "1",
+									"id": "api_cols",
+									"required":true,
+									"items":
+										{
+											"type":"number",
+											"description": "This field represents the actual column values that should be combined to create the lookup key for the SPARQL query.",
+											"minimum": "1",
+											"id": "api_cols/0",
+											"required":true
+										}
+								},
+								"beg_val": {
+									"type":"string",
+									"description": "This field represents any necessary preceding value that needs to be added to the lookup key for the SPRAQL query.",
+									"id": "beg_val",
+									"required":false
+								},
+								"end_val": {
+									"type":"string",
+									"description": "This field represents any necessary following value that needs to be added to the lookup key for the SPARQL query.",
+									"id": "end_val",
+									"required":false
+								}
+							}
+						}
+					}
+				}
+		},
+		"response": {
+			"type":"string",
+			"description": "This item represents the response fields that come back for a particular API call.  It is similar to the 'get' parameter field but also includes other fields that the API chooses to include in a response.",
+			"id": "response",
+			"required":false
+		},
+		"sparql": {
+			"type":"string",
+			"description": "(*This represents the SPARQL query that will be executed to search within the wiki for each item.  The item ID in the query will need to be replaced with 'XXX' so each item value can be substituted into a particular query call.  This item is not required for development)",
+			"id": "sparql",
+			"required":true
+		},
+		"summary": {
+			"type":"string",
+			"description": "This item represents the summary statement that will be added to a Wiki page change.  This will be visible in the history of a particular page.  If referencing year values, please use 'XXXX' so the bot can substitute the appropriate year for the particular action.",
+			"id": "summary",
+			"required":true
+		},
+		"year": {
+			"type":"array",
+			"description": "This array represents the years of data that will be pulled for a particular API call.",
+			"minitems": "1",
+			"id": "year",
+			"required":true,
+			"items":
+				{
+					"type":"string",
+					"description": "This value field represents the years in which values need to be retrieved for a particular year.  Each year value should be a string value rather than an number.",
+					"id": "year/0",
+					"required":false
+				}
+		}
+	}
+}
