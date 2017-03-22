@@ -1,6 +1,6 @@
 # census-wikidata-bot
 
-![Census-bot-logo](census-wikidata-bot/images/census_wiki_bot.jpg)
+![Census-bot-logo](https://raw.githubusercontent.com/CommerceDataService/census-wikidata-bot/master/images/census_wiki_bot.jpg)
 
 This project contains code for a bot which interacts with [Wikidata](https://www.wikidata.org/wiki/Wikidata:Main_Page) and [Wikipedia](https://en.wikipedia.org/wiki/Main_Page) using the pywikibot library.  This bot is designed to use Census data specifically and push it to the Wiki if a page exists for the requested subject matter.
 
