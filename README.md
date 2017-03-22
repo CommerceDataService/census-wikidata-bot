@@ -43,10 +43,10 @@ Once setup has been completed, the bot can be run by executing the `addPopValues
 The census bot can be run using different modes for testing.  Script command usage can be learned by using the `--help` command.
 
 #### Test
-The `-m t` argument can be passed to the script in order to run it in test mode.  This allows the bot to communicate with the test Wiki site (test.wikidata.org) instead of the main(production) [site](https://www.wikidata.org/).  In order to have pages to test against, you must create test pages and make sure you are referring to the proper values in your configuration file.
+The `-m t` argument can be passed to the script in order to run it in test mode.  This allows the bot to communicate with the [test site](test.wikidata.org) instead of the [production site](https://www.wikidata.org/).  In order to have pages to test against, you must create test pages and make sure you are referring to the proper values in your configuration file.
 
 #### Production
-The `-m p` argument can be passed to the script in order to run it in production mode (i.e., use the main https://www.wikidata.org site).
+The `-m p` argument can be passed to the script in order to run it in production mode (i.e., use the [main site](https://www.wikidata.org site)).
 
 #### Debug
 The `-d` argument can be passed to the script in order to run it in debug mode.  This will allow you to run the script on test or production without actually making any edits.
