@@ -17,7 +17,11 @@ The `mylang` and `family` parameters will also need to be set accordingly.  Plea
 You will need to define an environment variable with the name `CENSUS` and a value of your Census API key in order for the bot to use your API key in order to interact with the Census API's.  In order to obtain a Census API key, refer to the following [here] (http://api.census.gov/data/key_signup.html).
 
 #### Data Configuration files
-This bot application consists of various data configuration files to support the test and production instances of the bot.  
+This bot application consists of various data configuration files to support the test and production instances of the bot.  These files contain a standard JSON format and items can be added to these files to write additional values to Wiki pages following the standard format defined in the `census_bot_data.schema.json` file.
+
+Additionally, `data.json` is the configuration file for the main (production) [Wiki Site](https://www.wikidata.org/).  `data_test.json` is the configuration file for the test [Wiki Site](test.wikidata.org).
+
+Lastly, `reference.json` defines translates the Wiki property tags to what value they represent to make understanding the properties represented by those tags easier.
 
 ## Scope
 This bot is set up to use a configuration file
@@ -28,16 +32,32 @@ Currently, this bot is only set up to use a static file containing U.S. state po
 Going forward, there will be changes to the functionality of this bot and the range of data that it accesses and inserts into Wikidata.  This page will be periodically accordingly.
 
 
-#### data files
-There are two data files in the `/data` directory of the project.  These contain the necessary information for the bot to know how to communicate with the Census API's, what to get from the API to write to Wikidata, and how to write it.  There is a set structure to these files and you may add JSON objects to them in order for the bot to operate on additional Census API's or additional values for an existing API call.  Since property keys differ between the [test wikidata site] (https://test.wikidata.org/) and the main site, there are separate files for each.
+
 
 Lastly, for testing purposes, there is a `mode` argument for the `addPopValues.py` file.  This is required and will determine whether the bot runs under test or production mode (including which data file it should use).
 
 ## Running Bot
 Once setup has been completed, the bot can be run by executing the `addPopValues.py` file.
 
-#### Modes of execution
-- Test, Production, Debug
+## Modes of execution
+The census bot can be run using different modes for testing.  Script command usage can be learned by using the `--help` command.
+
+#### Test
+The `-m t` argument can be passed to the script in order to run it in test mode.  This allows the bot to communicate with the test Wiki site (test.wikidata.org) instead of the main(production) [site](https://www.wikidata.org/).  In order to have pages to test against, you must create test pages and make sure you are referring to the proper values in your configuration file.
+
+#### Production
+The `-m p` argument can be passed to the script in order to run it in production mode (i.e., use the main https://www.wikidata.org site).
+
+#### Debug
+The `-d` argument can be passed to the script in order to run it in debug mode.  This will allow you to run the script on test or production without actually making any edits.
 
 ##Logging
 You may follow logs of the actions that occurred for execution of a bot by looking at the logs in the `/logs` directory.  Log filenames are prefaced with `censusbot-log`+ the `YYYYMMDD` value.
+
+
+
+
+
+
+
+*This README contains a repository image which uses logos for the U.S. Census Bureau, Wikidata, and Wikipedia.*
