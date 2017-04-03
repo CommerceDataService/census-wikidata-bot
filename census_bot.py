@@ -110,7 +110,6 @@ def check_references(claim, references):
                     elif prop_type == 'url':
                         source_val = v[0].getTarget()
                     if source_val != references[k][1]:
-                        #logging.info('Reference value [{:,}] incorrect for key: {}'.format(v[0].getTarget(), k))
                         logging.info('Reference value [{}] incorrect for key: {}'.format(v[0].getTarget(), k))
                         return False
                 else:
