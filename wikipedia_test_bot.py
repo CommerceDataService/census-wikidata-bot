@@ -13,24 +13,6 @@ def get_census_values(api_url, get_var, for_var, api_key):
     except IOError as err:
         logging.error('IOError: {}'.format(err))
 
-def exists(page):
-    """
-    Determine if an entity exists in the data repository.
-
-    @rtype: bool
-    """
-    if not hasattr(page, '_content'):
-        try:
-            page.get()
-            return True
-        except pywikibot.NoPage:
-            print('NOPAGE')
-            return False
-        except pywikibot.IsRedirectPage:
-            print('REDIRECT')
-            return True
-    return 'lastrevid' in page._content
-
 if __name__ == '__main__':
     get_var = 'GEONAME,POP'
     for_var = 'state:*'
@@ -42,7 +24,12 @@ if __name__ == '__main__':
     for i, val in enumerate(metric_values[1:]):
         metric_val = int(val[1])
         key = val[0].split(',')[0]
-
+        if key == 'Kansas':
+            key = 'Kansas, United States'
+        elif key == 'Washington':
+            key = 'Washington (state)'
+        elif key == 'North Carolina':
+            key = 'North Carolina, United States'
         site = pywikibot.Site('en', 'wikipedia')  # any site will work, this is just an example
         repo = site.data_repository()
         print('site: {}, key: {}'.format(site, key)) 
@@ -51,28 +38,39 @@ if __name__ == '__main__':
         #item_id = search_results['search'][0]['id']
         page = pywikibot.Page(site, key)
         if page.exists():
-            if pywikibot.ItemPage.fromPage(page):
-                print('true')
-            else:
-                print('FALSE')
+            if page.isRedirectPage():
+                print('redirect true!!!!')
+                page = page.getRedirectTarget()
             item = pywikibot.ItemPage.fromPage(page)  # this can be used for any page object
-
+            #item.get()  # you need to call it to access any data.
             # you can also define an item like this
             #repo = site.data_repository()  # this is a DataSite object
             #item = pywikibot.ItemPage(repo, 'Q42')  # This will be functionally the same as the other item we defined
-            item.get()  # you need to call it to access any data.
-            sitelinks = item.sitelinks
-            aliases = item.aliases
-            text = page.get()
+            #sitelinks = item.sitelinks
+            #aliases = item.aliases
+            text = page.get(get_redirect=True)
             code = mwparserfromhell.parse(text)
             for template in code.filter_templates():
-                if template.name.matches('Infobox U.S. state'):
-                    if template.has('2010Pop'):
-                        print('population available')
+                if key == 'District of Columbia':
+                    if template.name.matches('Infobox settlement'):
+                        print('settlement match')
+                        if template.has('population_total'):
+                            print('population total present')
+                            print(template.get('population_total').value)
+                else:        
+                    if template.name.matches('Infobox U.S. state'):
+                        if template.has('2010Pop'):
+                            print(template.get('2010Pop').value)
+                    elif template.has('2010Pop'):
+                        print('Pop present but not in typical templates?')
                         print(template.get('2010Pop').value)
-                    #print(template.get('2010Pop').value)
-            
-            
+                    elif template.has('population_estimate'):
+                        print('population_estimate present but not in typical template')
+                        print(template.get('population_estimate').value)
+                    elif template.has('2000Pop'):
+                        print('2000Pop present')
+                        print(template.get('2000Pop').value)
+            #code for templates (first draft) 
             #templates = code.filter_templates()
             #for template in templates:
             #    if template.name == 'Infobox U.S. state':
