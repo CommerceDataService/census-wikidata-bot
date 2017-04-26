@@ -26,11 +26,9 @@ def get_census_values(api_url, get_var, for_var, api_key, year=datetime.datetime
 def search_for_page_items(template, infobox_keys):
     template_values = {}
     for item, item_keys in infobox_keys.items():
-        #print('infobox val: {}'.format(item_keys))
         for key in item_keys:
-            #print('search for this key: {}'.format(key))
             if template.has(key):
-                template_values[item] = str(template.get(key).value)
+                template_values[item] = str(template.get(key))
                 break
     return template_values
             
@@ -47,21 +45,27 @@ def population_rank_sort(pop_list):
     pop_list.extend(non_states)
     return pop_list
 
-def update_page_items(page, api_values, page_values):
-    for key, val in template_values.items():
-        #print('k: {},v: {}'.format(key,val))
+def update_page_items(page, text, api_values, page_values):
+    edits = 0
+    for key, val in template_values.items(): 
         pos = int(key.split(' - ')[1])
-        print('KEY: {}'.format(key.split(' - ')[0]))
+        new_value = api_values[pos]
+        comparison_val = val.split('=', 1)[1].strip()
         if key == 'total_pop - 1':
-            print('ORIG VALUE: {}'.format(val[:val.find('<ref')].replace('\n','')))
-            print('REFERENCE: {}'.format(val[val.find('<ref'):].replace('\n','')))
-        else: 
-            print('ORIG VALUE: {}'.format(val.replace('\n','')))
-        print('NEW VALUE: {}'.format(api_values[pos]))
-        #page.text = text.replace(val, api_values[pos])
-        #add reference!!!!!!!!!
-        #page.save(u'Updating population estimate and associated population rank (when applicable)\
-        #        with latest value from Census Bureau')
+            comparison_val = comparison_val[:comparison_val.find('<ref')].replace(',','')
+        if comparison_val == new_value:
+            print('Value for {} is correct already'.format(key))
+        else:
+            edits += 1
+            if key == 'total_pop - 1':
+                new_value = '{:,}'.format(int(new_value))+'<ref name=PopEstUS>{{cite web|url=https://www.census.gov/programs-surveys/popest.html |title=Population and Housing Unit Estimates| publisher=[[U.S. Census Bureau]]}}</ref>'
+            new_value = val.split('=', 1)[0] + '= ' + new_value + '\n'
+            print('OLD:{}\nNEW:{}'.format(val, new_value))
+            text = text.replace(val, new_value)
+    if edits > 0:
+        page.text = text
+        page.save(u'Updating population estimate and associated population rank (when applicable)\
+                    with latest value from Census Bureau')
 
 if __name__ == '__main__':
     get_var = 'GEONAME,POP'
@@ -74,15 +78,12 @@ if __name__ == '__main__':
     site = pywikibot.Site('en', 'wikipedia') 
     repo = site.data_repository()
     
-    metric_values = get_census_values(api_url, get_var, for_var, api_key)
-    #metric_values.append(['User:Sasan-CDS/sandbox', '2302030'])
-    #metric_values = [['User:Sasan-CDS/sandbox', '2302030']]
-    #get list of pages from template, for each item in 
+    #metric_values = get_census_values(api_url, get_var, for_var, api_key)
+    metric_values = [['sfddsa','2222222'], ['User:Sasan-CDS/sandbox', '2302030', '21']]
     if metric_values:
         #remove header
         metric_values.pop(0)
         metric_values = population_rank_sort(metric_values)
-
         print('Number of items in API Response: {}'.format(len(metric_values)))
         for i, val in enumerate(metric_values):
             key = val[0].split(',')[0]
@@ -104,9 +105,9 @@ if __name__ == '__main__':
                     else:
                         template_values = search_for_page_items(template, infobox_keys)
                 if template_values:
-                    update_page_items(page, val, template_values)
+                    update_page_items(page, text, val, template_values)
                 else:
-                    print('No value found for this page!!!')
+                    print('No items were found in this page!!!')
             else:
                 print('NO RESULTS FOR: {}'.format(key))
     else:
