@@ -1,5 +1,9 @@
-#config file
+#pywikibot config
 user-config.py
+
 apicache/
 throttle.ctrl
 pywikibot.lwp
+
+#application config
+app_config.ini

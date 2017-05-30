@@ -13,8 +13,8 @@ This is the configuration file for the bot.  In the this file, insert your user 
 
 The `mylang` and `family` parameters will also need to be set accordingly.  Please refer to the documentation for Pywikibot for additional information regarding this (as well as logging in).
 
-#### Environment Variables
-You will need to define an environment variable with the name `CENSUS` and a value of your Census API key in order for the bot to use your API key in order to interact with the Census API's.  In order to obtain a Census API key, refer to the following [here] (http://api.census.gov/data/key_signup.html).
+#### API Key
+A sample file ('app_config.ini.sample') has been provided.  Please add your key to this file and rename it to `app_config.ini`.  In order to obtain a Census API key, refer to the following [page](http://api.census.gov/data/key_signup.html).
 
 #### Data Configuration files
 This bot application consists of various data configuration files to support the test and production instances of the bot.  These files contain a standard JSON format and items can be added to these files to write additional values to Wiki pages following the standard format defined in the `census_bot_data.schema.json` file.
