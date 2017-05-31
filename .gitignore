@@ -1,9 +1,14 @@
-#pywikibot config
-user-config.py
+#byte-compiled files
+__pycache__/
 
+#pywikibot user config files
+user-config.py
+user-password.py
+
+#pywikibot generated files
 apicache/
 throttle.ctrl
 pywikibot.lwp
 
-#application config
+#application config files
 app_config.ini
