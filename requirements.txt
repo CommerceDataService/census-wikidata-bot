@@ -1,5 +1,4 @@
-pywikibot==2.0rc5
-requests==2.11.1
+pywikibot==3.0.20170521
 simplejson==3.10.0
 requests==2.12.3
 mwparserfromhell==0.4.4

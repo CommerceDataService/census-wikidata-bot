@@ -1,13 +1,17 @@
+#!/usr/bin/python3.5
+ 
+#Author:        Sasan Bahadaran
+#Date:          5/1/17
+#Organization:  Commerce Data Service
+#Description:   This is a bot script for getting Census data from the Census
+#Bureau API's and writing it to Wikipedia.
+
 import pywikibot, json, os, requests, argparse, logging, time, json, sys
-import mwparserfromhell, datetime, math, configparser
+import mwparserfromhell, datetime, math
 from pywikibot.data import api
 from pywikibot import pagegenerators
+from util import config_funcs
 
-#read configuration parameters from config file
-def loadAppConfig(section, key):
-    config = configparser.ConfigParser()
-    config.read('app_config.ini')
-    return config[section][key]
 
 #get values from CENSUS API.  Return response from first year with valid response starting with
 #current year and ending with 2013
@@ -101,8 +105,7 @@ if __name__ == '__main__':
     get_var = 'GEONAME,POP'
     for_var = 'state:*'
     api_url = 'http://api.census.gov/data/XXXX/pep/population'
-    api_key = loadAppConfig('API', 'key')
-    print('HEY API_KEY: {}'.format(api_key))
+    api_key = config_funcs.getAppConfigParam('API', 'key')
     infobox_keys = {'total_pop - 1': ['population_total', '2010Pop', '2000Pop', 'population_estimate'],
             'rank - 3': ['PopRank']
             }
