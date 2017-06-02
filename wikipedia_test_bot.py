@@ -92,10 +92,10 @@ def update_page_items(page, text, api_values, page_values, year):
                         .format(datetime.datetime.today().strftime('%B %d, %Y'), datetime.datetime.today().strftime('%B %d, %Y'))
         new_value = val.split('=', 1)[0] + '= ' + new_value + '\n'
         print('OLD:{}\nNEW:{}'.format(val, new_value))
-        #text = text.replace(val, new_value)
-        #page.text = text
-        #page.save(u'Updating population estimate and associated population rank (when applicable)'\
-                    #'with latest value from Census Bureau')
+        text = text.replace(val, new_value)
+        page.text = text
+        page.save(u'Updating population estimate and associated population rank (when applicable)'\
+                    'with latest value from Census Bureau')
 
 if __name__ == '__main__':
     get_var = 'GEONAME,POP'
@@ -116,6 +116,8 @@ if __name__ == '__main__':
         metric_values.pop(0)
         metric_values = population_rank_sort(metric_values)
         print('Number of items in API Response: {}'.format(len(metric_values)))
+        #for testing purposes of writing to my sandbox
+        #metric_values = [['User:Sasan-CDS/sandbox', '624594', '50', '49th']]
         for i, api_val in enumerate(metric_values):
             key = api_val[0].split(',')[0]
             print('[STATE: {}]'.format(key))
@@ -123,7 +125,7 @@ if __name__ == '__main__':
                 key = key + ', United States'
             elif key == 'Washington':
                 key = 'Washington (state)'
-            #remove DC and PR from Census API Response
+            # remove DC and PR from Census API Response
             if api_val[2] in ['11', '72']:
                 metric_values.pop(i)
             page = pywikibot.Page(site, key)
