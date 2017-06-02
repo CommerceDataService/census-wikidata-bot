@@ -65,29 +65,26 @@ def removekey(d, key):
     return r
 
 def compare_page_items(api_values, page_values, year):
-    for key, val in template_values.items():
+    print('api_values being passed to compare function: {}'.format(api_values))
+    for key, val in page_values.items():
         pos = int(key.split(' - ')[1])
-        new_value = api_values[pos] + ' ('+year+' est)'
         comparison_val = val.split('=', 1)[1].strip()
+        new_value = api_values[pos]
         if key == 'total_pop - 1':
+            # format value correctly for comparison with page content
+            new_value += ' ('+year+' est)'
             comparison_val = comparison_val[:comparison_val.find('<ref')].replace(',', '')
+        print('value from api formatted: {}'.format(new_value))
+        print('comparison_val: {}'.format(comparison_val))
         if comparison_val == new_value:
             print('value for {} is correct already - {}'.format(key.split(' - ')[0], new_value))
             page_values = removekey(page_values, key)
     return page_values
 
 def update_page_items(page, text, api_values, page_values, year):
-    edits = 0
-    for key, val in template_values.items(): 
+    for key, val in page_values.items(): 
         pos = int(key.split(' - ')[1])
         new_value = api_values[pos]
-        #comparison_val = val.split('=', 1)[1].strip()
-        #if key == 'total_pop - 1':
-            #comparison_val = comparison_val[:comparison_val.find('<ref')].replace(',','')
-        #if comparison_val == new_value:
-            #print('Value for {} is correct already - {}'.format(key.split(' - ')[0], new_value))
-        #else:
-            #edits += 1
         if key == 'total_pop - 1':
             new_value = '{:,}'.format(int(new_value))+' ('+year+' est)<ref name=PopEstUS>{{cite web|'\
                         'url=https://www.census.gov/programs-surveys/popest.html |title=Population'\
@@ -95,17 +92,18 @@ def update_page_items(page, text, api_values, page_values, year):
                         .format(datetime.datetime.today().strftime('%B %d, %Y'), datetime.datetime.today().strftime('%B %d, %Y'))
         new_value = val.split('=', 1)[0] + '= ' + new_value + '\n'
         print('OLD:{}\nNEW:{}'.format(val, new_value))
-        text = text.replace(val, new_value)
-    #if edits > 0:
-    #    page.text = text
-    #    page.save(u'Updating population estimate and associated population rank (when applicable)'\
-    #                'with latest value from Census Bureau')
+        #text = text.replace(val, new_value)
+        #page.text = text
+        #page.save(u'Updating population estimate and associated population rank (when applicable)'\
+                    #'with latest value from Census Bureau')
 
 if __name__ == '__main__':
     get_var = 'GEONAME,POP'
     for_var = 'state:*'
     api_url = 'http://api.census.gov/data/XXXX/pep/population'
     api_key = config_funcs.getAppConfigParam('API', 'key')
+    # the keys in this dict represent the 'property - position of corresponding value in api response
+    # and the values represent the possible keys in which this property is listed under in the template
     infobox_keys = {'total_pop - 1': ['population_total', '2010Pop', '2000Pop', 'population_estimate'],
             'rank - 3': ['PopRank']
             }
@@ -113,21 +111,20 @@ if __name__ == '__main__':
     repo = site.data_repository()
     
     metric_values, year = get_census_values(api_url, get_var, for_var, api_key)
-    #metric_values = [['sfddsa','2222222'], ['User:Sasan-CDS/sandbox', '2302030', '21']]
     if metric_values:
         #remove header
         metric_values.pop(0)
         metric_values = population_rank_sort(metric_values)
         print('Number of items in API Response: {}'.format(len(metric_values)))
-        for i, val in enumerate(metric_values):
-            key = val[0].split(',')[0]
+        for i, api_val in enumerate(metric_values):
+            key = api_val[0].split(',')[0]
             print('[STATE: {}]'.format(key))
             if key in ['Kansas', 'North Carolina', 'Georgia']:
                 key = key + ', United States'
             elif key == 'Washington':
                 key = 'Washington (state)'
             #remove DC and PR from Census API Response
-            if val[2] in ['11', '72']:
+            if api_val[2] in ['11', '72']:
                 metric_values.pop(i)
             page = pywikibot.Page(site, key)
             if page.exists():
@@ -137,15 +134,19 @@ if __name__ == '__main__':
                 code = mwparserfromhell.parse(text)
                 template_values = {}
                 for template in code.filter_templates():
+                    # if correct template is found, break out of loop
                     if template_values:
                         break
                     else:
                         template_values = search_for_page_items(template, infobox_keys)
-                #compare page items
                 if template_values:
-                    template_value = compare_page_items(val, template_values, year)
-                if template_values:
-                    update_page_items(page, text, val, template_values, year)
+                    #compare page items
+                    template_values = compare_page_items(api_val, template_values, year)
+                    print('template_values left over: {}'.format(template_values))
+                    if template_values:
+                        update_page_items(page, text, api_val, template_values, year)
+                    else:
+                        print('Nothing to update')
                 else:
                     print('No items were found in this page!!!')
             else:
