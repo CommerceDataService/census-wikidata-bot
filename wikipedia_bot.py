@@ -161,7 +161,7 @@ if __name__ == '__main__':
         metric_values = population_rank_sort(metric_values)
         print('Number of items in API Response: {}'.format(len(metric_values)))
         #for testing purposes of writing to my sandbox
-        metric_values = [['User:Sasan-CDS/sandbox', '624594', '50', '49th']]
+        #metric_values = [['User:Sasan-CDS/sandbox', '624594', '50', '49th']]
         for i, api_val in enumerate(metric_values):
             key = api_val[0].split(',')[0]
             print('[STATE: {}]'.format(key))
