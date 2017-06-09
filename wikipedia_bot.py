@@ -172,7 +172,7 @@ if __name__ == '__main__':
         metric_values = population_rank_sort(metric_values)
     else:
         metric_values = test_data
-        year = 2016
+        year = '2016'
     if metric_values:
         print('Number of items in API Response: {}'.format(len(metric_values)))
         for i, api_val in enumerate(metric_values):
