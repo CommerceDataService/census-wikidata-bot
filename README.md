@@ -37,16 +37,16 @@ This application contains data configuration files that instruct bots on where a
 Lastly, `reference.json` contains definitions of wiki property tags and what that property represents in order to make understanding of the tags defined in the main data files easier.
 
 ## Running The Bots
-Once all setup has been completed, the Wikidata bot can be run by executing `census_bot.py` and the Wikipedia bot can be run by executing `wikipedia_test_bot.py`.
+Once all setup has been completed, the Wikidata bot can be run by executing `wikidata_bot.py` and the Wikipedia bot can be run by executing `wikipedia_bot.py`.
 
 ### Modes of execution
-Currently, the wikipedia bot does not take any arguments (*still in development*).  The Wikidata bot can be run using different modes.  More information about argument usage is available by using  `--help`.  The following modes are available for running the Wikidata bot are available:
+The wikidata and wikipedia bots can be run using different modes.  More information about argument usage is available by using  `--help`.  The following modes are available for running the Wikidata bot are available:
 
 ###### Test
-The `-m t` argument can be passed to the script in order to run it in test mode.  This allows the bot to communicate with the [test site](test.wikidata.org) instead of the [production site](https://www.wikidata.org/).  In order to have pages to test against, you must create test pages and make sure you are referring to the proper values in your configuration file.
+The `-m t` argument can be passed to the script in order to run it in test mode.  For the wikidata bot, this causes the bot to communicate with the [test site](test.wikidata.org) instead of the [production site](https://www.wikidata.org/).  In order to have pages to test against, you must create test pages and make sure you are referring to the proper values in your configuration file.  For wikipedia, this causes to use the test data defined in the test_data parameter in the code.
 
 ###### Production
-The `-m p` argument can be passed to the script in order to run it in production mode (i.e., use the [main site](https://www.wikidata.org) ).
+The `-m p` argument can be passed to the script in order to run it in production mode (i.e., use the [main site](https://www.wikidata.org) for wikidata and use API data for wikipedia).
 
 ###### Debug
 The `-d` argument can be passed to the script in order to run it in debug mode.  This will allow you to run the script on test or production without actually making any edits.
@@ -54,11 +54,11 @@ The `-d` argument can be passed to the script in order to run it in debug mode. 
 ### Logging
 Logs for bot actions are available in the '/logs' directory.  Log filenames are prefaced with `censusbot-log`+`YYYYMMDD`.
 
-## How The Wikidata Bot Operates
+## How the Wikidata Bot Operates
 The bot searches for values specified in the data configuration files (as explained above).  If the bot finds a single result for a particular wiki search, it will access that result page and check if the statement it is instructed to look for is present.  If so, it will check the claims for that statement.  If there is a claim with no `point in time` value, it will be deleted.  Subsequently, it will check for any entries referring to the specified point in time year.  If any entries are found they will be checked for completeness.  if any entry is incomplete, it will be deleted and a new complete entry will be created instead.  If no entries are present for the specified statement or point in time, the bot will create add one.
 
-
-
+## How the Wikipedia Bot Operates
+to be added
 
 
 *This README contains a repository image which uses logos for the U.S. Census Bureau, Wikidata, and Wikipedia.*
