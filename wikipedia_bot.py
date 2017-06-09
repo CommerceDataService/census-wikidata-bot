@@ -110,8 +110,17 @@ def update_page_items(page, text, api_values, page_values, year, reference, comm
             print('DEBUG - Page value will be updated')
 
 if __name__ == '__main__':
+    scriptpath = os.path.dirname(os.path.abspath(__file__))
    
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+                        '-m',
+                        '--mode',
+                        required=True,
+                        type=str,
+                        choices=['t', 'p'],
+                        help='Pass a t flag for test mode or a p flag for production mode'
+    )
     parser.add_argument(
                         '-d',
                         '--debug',
@@ -121,19 +130,17 @@ if __name__ == '__main__':
                         help='Pass this flag to set mode of bot to debug (means there will be no actual changes to the Wiki)'
     )
     args = parser.parse_args()
+    logging.info("-------- [SCRIPT ARGUMENTS] --------")
+    if args.mode == 't':
+        logging.info('      BOT MODE: TEST')
+    elif args.mode == 'p':
+        logging.info('      BOT MODE: PROD')
     if args.debug:
-        print(' ! RUNNING IN DEBUG MODE!')
-        #logging.info('      !RUNNING IN DEBUG MODE!')
+        logging.info('      !RUNNING IN DEBUG MODE!')
     logging.info("----------- [JOB START] -----------")
 
-    #if args.mode == 't':
-    #    site = pywikibot.Site('test', 'wikidata')
-    #    data_file = os.path.join(scriptpath, "data", "data_test.json")
-    #else:
-    #    site = pywikibot.Site('wikidata', 'wikidata')
-    #    data_file = os.path.join(scriptpath, "data", "data.json")
-
-
+    # can be used later for config file
+    #data_file = os.path.join(scriptpath, "data", "data.json")
 
     get_var = 'GEONAME,POP'
     for_var = 'state:*'
@@ -149,28 +156,32 @@ if __name__ == '__main__':
                         .format(datetime.datetime.today().strftime('%B %-d, %Y'), datetime.datetime.today().strftime('%B %-d, %Y'))
     comment = 'Updating population estimate with latest data from Census Bureau'
     # position of state code in API response
-    state_code_pos = 2
+    code_check_pos = 2
+    #DC and PR
     exceptions = ['11', '72']
+    key_exceptions = {'Kansas': 'Kansas, United States', 'North Carolina': 'North Carolina, United States',
+            'Georgia': 'Georgia, United States', 'Washington': 'Washington (state)'}
+
     site = pywikibot.Site('en', 'wikipedia') 
     repo = site.data_repository()
     
-    metric_values, year = get_census_values(api_url, get_var, for_var, api_key)
-    if metric_values:
+    if args.mode == 'p':
+        metric_values, year = get_census_values(api_url, get_var, for_var, api_key)
         #remove header
         metric_values.pop(0)
         metric_values = population_rank_sort(metric_values)
+    else:
+        metric_values = [['User:Sasan-CDS/sandbox', '555555', '50', '11th']]
+        year = 2016
+    if metric_values:
         print('Number of items in API Response: {}'.format(len(metric_values)))
-        #for testing purposes of writing to my sandbox
-        #metric_values = [['User:Sasan-CDS/sandbox', '624594', '50', '49th']]
         for i, api_val in enumerate(metric_values):
             key = api_val[0].split(',')[0]
             print('[STATE: {}]'.format(key))
-            if key in ['Kansas', 'North Carolina', 'Georgia']:
-                key = key + ', United States'
-            elif key == 'Washington':
-                key = 'Washington (state)'
-            # remove DC and PR from Census API Response
-            if api_val[state_code_pos] in exceptions:
+            if key in key_exceptions:
+                key = key_exceptions[key]
+                print('Key exception found. new key: {}'.format(key))
+            if api_val[code_check_pos] in exceptions:
                 metric_values.pop(i)
             page = pywikibot.Page(site, key)
             if page.exists():
