@@ -1,4 +1,4 @@
-#!/usr/bin/python3.5
+#!pi_values/usr/bin/python3.5
  
 #Author:        Sasan Bahadaran
 #Date:          5/1/17
@@ -39,6 +39,7 @@ def search_for_page_items(template, infobox_keys):
         for key in item_keys:
             if template.has(key):
                 template_values[item] = str(template.get(key))
+                print('KEY - {} Found'.format(key))
                 break
     return template_values
             
@@ -64,40 +65,76 @@ def removekey(d, key):
     del r[key]
     return r
 
+# compare value from page to value from API to check for discrepancies
+# *note - this function does not compare references, only values
 def compare_page_items(api_values, page_values, year):
-    print('api_values being passed to compare function: {}'.format(api_values))
     for key, val in page_values.items():
         pos = int(key.split(' - ')[1])
-        comparison_val = val.split('=', 1)[1].strip()
-        new_value = api_values[pos]
+        # extact value and normalize whitespace
+        current_val = ' '.join(val.split('=', 1)[1].split())
+        api_value = api_values[pos]
         if key == 'total_pop - 1':
             # format value correctly for comparison with page content
-            new_value += ' ('+year+' est)'
-            comparison_val = comparison_val[:comparison_val.find('<ref')].replace(',', '')
-        print('value from api formatted: {}'.format(new_value))
-        print('comparison_val: {}'.format(comparison_val))
-        if comparison_val == new_value:
-            print('value for {} is correct already - {}'.format(key.split(' - ')[0], new_value))
+            api_value += ' ('+year+' est)'
+            # remove reference, commas, and any <br> tags
+            current_val = current_val[:current_val.find('<ref')].replace(',', '').replace('<br>', ' ')
+        print('KEY: {} | EXISTING VALUE: {} | NEW VALUE: {}'.format(key.split(' - ')[0], current_val, api_value))
+        if current_val == api_value:
+            print('VALUES MATCH')
             page_values = removekey(page_values, key)
+        else:
+            print('VALUES DO NOT MATCH')
     return page_values
 
-def update_page_items(page, text, api_values, page_values, year):
+def update_page_items(page, text, api_values, page_values, year, reference, comment):
     for key, val in page_values.items(): 
         pos = int(key.split(' - ')[1])
         new_value = api_values[pos]
+        # add reference for total population
         if key == 'total_pop - 1':
-            new_value = '{:,}'.format(int(new_value))+' ('+year+' est)<ref name=PopEstUS>{{cite web|'\
-                        'url=https://www.census.gov/programs-surveys/popest.html |title=Population'\
-                        ' and Housing Unit Estimates |date={} |accessdate={} |publisher=[[U.S. Census Bureau]]}}</ref>'\
-                        .format(datetime.datetime.today().strftime('%B %d, %Y'), datetime.datetime.today().strftime('%B %d, %Y'))
-        new_value = val.split('=', 1)[0] + '= ' + new_value + '\n'
-        print('OLD:{}\nNEW:{}'.format(val, new_value))
-        text = text.replace(val, new_value)
-        page.text = text
-        page.save(u'Updating population estimate and associated population rank (when applicable)'\
-                    'with latest value from Census Bureau')
+            new_value = '{:,}'.format(int(new_value))+' ('+year+' est)'+reference
+        else:
+            index = comment.find('with')
+            comment = comment[:index]+' and associated population rank '+comment[index:]
+        # add property tag
+        new_value = ' '.join(val.split('=', 1)[0].split())+' = '+new_value
+        # add new line tag
+        new_value += '\n'
+        print('FULL EXISTING VALUE: {}\nFULL REPLACEMENT VALUE: {}'.format(val, new_value))
+        if not args.debug:
+            text = text.replace(val, new_value)
+            page.text = text
+            page.save(comment)
+            print('Page Successfully Updated')
+        else:
+            print('DEBUG - Page value will be updated')
 
 if __name__ == '__main__':
+   
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+                        '-d',
+                        '--debug',
+                        required=False,
+                        action='store_true',
+                        default=False,
+                        help='Pass this flag to set mode of bot to debug (means there will be no actual changes to the Wiki)'
+    )
+    args = parser.parse_args()
+    if args.debug:
+        print(' ! RUNNING IN DEBUG MODE!')
+        #logging.info('      !RUNNING IN DEBUG MODE!')
+    logging.info("----------- [JOB START] -----------")
+
+    #if args.mode == 't':
+    #    site = pywikibot.Site('test', 'wikidata')
+    #    data_file = os.path.join(scriptpath, "data", "data_test.json")
+    #else:
+    #    site = pywikibot.Site('wikidata', 'wikidata')
+    #    data_file = os.path.join(scriptpath, "data", "data.json")
+
+
+
     get_var = 'GEONAME,POP'
     for_var = 'state:*'
     api_url = 'http://api.census.gov/data/XXXX/pep/population'
@@ -107,6 +144,13 @@ if __name__ == '__main__':
     infobox_keys = {'total_pop - 1': ['population_total', '2010Pop', '2000Pop', 'population_estimate'],
             'rank - 3': ['PopRank']
             }
+    reference = '<ref name=PopEstUS>{{{{cite web|url=https://www.census.gov/programs-surveys/popest.html|title=Population'\
+                        ' and Housing Unit Estimates |date={} |accessdate={}|publisher=[[U.S. Census Bureau]]}}}}</ref>'\
+                        .format(datetime.datetime.today().strftime('%B %-d, %Y'), datetime.datetime.today().strftime('%B %-d, %Y'))
+    comment = 'Updating population estimate with latest data from Census Bureau'
+    # position of state code in API response
+    state_code_pos = 2
+    exceptions = ['11', '72']
     site = pywikibot.Site('en', 'wikipedia') 
     repo = site.data_repository()
     
@@ -117,7 +161,7 @@ if __name__ == '__main__':
         metric_values = population_rank_sort(metric_values)
         print('Number of items in API Response: {}'.format(len(metric_values)))
         #for testing purposes of writing to my sandbox
-        #metric_values = [['User:Sasan-CDS/sandbox', '624594', '50', '49th']]
+        metric_values = [['User:Sasan-CDS/sandbox', '624594', '50', '49th']]
         for i, api_val in enumerate(metric_values):
             key = api_val[0].split(',')[0]
             print('[STATE: {}]'.format(key))
@@ -126,7 +170,7 @@ if __name__ == '__main__':
             elif key == 'Washington':
                 key = 'Washington (state)'
             # remove DC and PR from Census API Response
-            if api_val[2] in ['11', '72']:
+            if api_val[state_code_pos] in exceptions:
                 metric_values.pop(i)
             page = pywikibot.Page(site, key)
             if page.exists():
@@ -144,9 +188,8 @@ if __name__ == '__main__':
                 if template_values:
                     #compare page items
                     template_values = compare_page_items(api_val, template_values, year)
-                    print('template_values left over: {}'.format(template_values))
                     if template_values:
-                        update_page_items(page, text, api_val, template_values, year)
+                        update_page_items(page, text, api_val, template_values, year, reference, comment)
                     else:
                         print('Nothing to update')
                 else:
