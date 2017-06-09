@@ -161,7 +161,7 @@ if __name__ == '__main__':
     exceptions = ['11', '72']
     key_exceptions = {'Kansas': 'Kansas, United States', 'North Carolina': 'North Carolina, United States',
             'Georgia': 'Georgia, United States', 'Washington': 'Washington (state)'}
-
+    test_data = [['User:Sasan-CDS/sandbox', '555555', '50', '11th']]
     site = pywikibot.Site('en', 'wikipedia') 
     repo = site.data_repository()
     
@@ -171,7 +171,7 @@ if __name__ == '__main__':
         metric_values.pop(0)
         metric_values = population_rank_sort(metric_values)
     else:
-        metric_values = [['User:Sasan-CDS/sandbox', '555555', '50', '11th']]
+        metric_values = test_data
         year = 2016
     if metric_values:
         print('Number of items in API Response: {}'.format(len(metric_values)))
