@@ -151,7 +151,7 @@ if __name__ == '__main__':
     infobox_keys = {'total_pop - 1': ['population_total', '2010Pop', '2000Pop', 'population_estimate'],
             'rank - 3': ['PopRank']
             }
-    reference = '<ref name=PopEstUS>{{{{cite web|url=https://www.census.gov/programs-surveys/popest.html|title=Population'\
+    reference = '<ref name=PopHousingEst>{{{{cite web|url=https://www.census.gov/programs-surveys/popest.html|title=Population'\
                         ' and Housing Unit Estimates |date={} |accessdate={}|publisher=[[U.S. Census Bureau]]}}}}</ref>'\
                         .format(datetime.datetime.today().strftime('%B %-d, %Y'), datetime.datetime.today().strftime('%B %-d, %Y'))
     comment = 'Updating population estimate with latest data from Census Bureau'
@@ -161,7 +161,10 @@ if __name__ == '__main__':
     exceptions = ['11', '72']
     key_exceptions = {'Kansas': 'Kansas, United States', 'North Carolina': 'North Carolina, United States',
             'Georgia': 'Georgia, United States', 'Washington': 'Washington (state)'}
-    test_data = [['User:Sasan-CDS/sandbox', '555555', '50', '11th']]
+    #test_data = [['User:Sasan-CDS/sandbox', '555555', '50', '11th']]
+    test_data = [['New York', '19745289', '36', '4th'], ['Illinois', '12801539', '17', '5th'], 
+            ['Pennsylvania', '12784227', '42', '6th'], ['Ohio', '11614373', '39', '7th'],
+            ['Georgia', '10310371', '13', '8th']]
     site = pywikibot.Site('en', 'wikipedia') 
     repo = site.data_repository()
     
@@ -176,6 +179,7 @@ if __name__ == '__main__':
     if metric_values:
         print('Number of items in API Response: {}'.format(len(metric_values)))
         for i, api_val in enumerate(metric_values):
+            print('API item: {}'.format(api_val))
             key = api_val[0].split(',')[0]
             print('[STATE: {}]'.format(key))
             if key in key_exceptions:
