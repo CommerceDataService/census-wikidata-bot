@@ -1,0 +1,21 @@
+# -*- coding: utf-8 -*-
+
+# Wikipedia
+mylang = 'en'
+family = 'wikipedia'
+usernames['wikipedia']['en'] = u'YOUR USERNAME'
+
+# Wikidata production
+mylang = 'en'
+family = 'wikidata'
+usernames['wikidata']['en'] = u'YOUR USERNAME'
+
+# Wikidata test
+mylang = 'test'
+family = 'wikidata'
+usernames['wikidata']['test'] = u'YOUR USERNAME'
+
+# password file (optional)
+# If you choose not to store your password in a file,
+# you can enter it when logging in instead.
+password_file = 'user-password.py'

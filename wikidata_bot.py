@@ -8,7 +8,7 @@
 
 import pywikibot, json, os, requests, argparse, logging, time, json, sys
 from pywikibot.data import api
-
+from util import config_funcs
 
 def get_census_values(api_url, get_var, for_var, api_key):
     try:
@@ -110,7 +110,6 @@ def check_references(claim, references):
                     elif prop_type == 'url':
                         source_val = v[0].getTarget()
                     if source_val != references[k][1]:
-                        #logging.info('Reference value [{:,}] incorrect for key: {}'.format(v[0].getTarget(), k))
                         logging.info('Reference value [{}] incorrect for key: {}'.format(v[0].getTarget(), k))
                         return False
                 else:
@@ -180,14 +179,15 @@ def load_config(data_file):
             return jsondata
     except:
         raise
-
-def get_key_vals(wiki_lookup_key, val):
-    val_key = ''
-    for item in wiki_lookup_key['api_cols']:
-        val_key += val[item]
-    key = wiki_lookup_key['beg_val']+val_key+wiki_lookup_key['end_val']
-    logging.info('Search Key: {}'.format(key))
-    return key
+    
+# construct page search key from config file params
+#def get_key_vals(wiki_lookup_key, val):
+#    val_key = ''
+#    for item in wiki_lookup_key['api_cols']:
+#        val_key += val[item]
+#    key = wiki_lookup_key['beg_val']+val_key+wiki_lookup_key['end_val']
+#    logging.info('Search Key: {}'.format(key))
+#    return key
 
 def insertYearValue(value, year):
     return value.replace('XXXX', year)
@@ -236,10 +236,7 @@ if __name__ == '__main__':
     else:
         site = pywikibot.Site('wikidata', 'wikidata')
         data_file = os.path.join(scriptpath, "data", "data.json")
-    if os.environ['CENSUS']:
-        api_key = os.environ['CENSUS']
-    else:
-        sys.exit('CENSUS environment variable not set for API key.  Please set this environment variable and run script again.') 
+    api_key = config_funcs.getAppConfigParam('API', 'key')
     data = load_config(data_file)
     repo = site.data_repository()
     if data:
@@ -260,7 +257,7 @@ if __name__ == '__main__':
                         sparql = api_item['sparql']
                         logging.info('[sparql]: {}'.format(sparql))
                     for year in api_item['year']:
-                        logging.info('**********NEW YEAR: {}**********'.format(year))
+                        logging.info('**********NEW SEARCH YEAR: {}**********'.format(year))
                         summary = insertYearValue(summary, year)
                         api_url = insertYearValue(api_url, year)
                         for item in api_item['items']:
@@ -294,7 +291,8 @@ if __name__ == '__main__':
                                     search_results = find_test_wiki_items(site, key)
                                     num_of_results = len(search_results['search'])
                                 elif args.mode == 'p':
-                                    key = get_key_vals(wiki_lookup_key, val)
+                                    key = config_funcs.get_key_vals(wiki_lookup_key, val)
+                                    logging.info('Search Key: {}'.format(key))
                                     search_results = find_wiki_items(sparql, key)
                                     num_of_results = len(search_results['results']['bindings'])
                                 #if only single search result
@@ -340,6 +338,6 @@ if __name__ == '__main__':
                                 elif num_of_results > 1:
                                     logging.info('MORE THAN 1 ITEM FOUND')
             else:
-                logging.info('[API CALL #{} NOT ENABLED]'.format(i))
+                logging.info('[DATA CONFIGURATION FILE ITEM #{} NOT ENABLED]'.format(i))
     else:
         logging.error('Data file did not load any claims to iterate over')
