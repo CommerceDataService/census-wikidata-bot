@@ -87,6 +87,7 @@ def compare_page_items(api_values, page_values, year):
     return page_values
 
 def update_page_items(page, text, api_values, page_values, year, reference, comment):
+    global num_of_edits
     for key, val in page_values.items(): 
         pos = int(key.split(' - ')[1])
         new_value = api_values[pos]
@@ -105,10 +106,10 @@ def update_page_items(page, text, api_values, page_values, year, reference, comm
             text = text.replace(val, new_value)
             page.text = text
             page.save(comment)
-            print('Page Successfully Updated')
+            logging.info('Page Successfully Updated')
             num_of_edits += 1
         else:
-            print('DEBUG - Page value will be updated')
+            logging.info('DEBUG - Page value will be updated')
             num_of_edits += 1
 
 if __name__ == '__main__':
@@ -146,10 +147,11 @@ if __name__ == '__main__':
                         type=int,
                         help='Pass this flag to control the number of edits that the bot makes.'
     )
-    opt = parser.add_argument(
-                              '-s',
-                              '--sandbox'
-    )
+    # placeholder for sandbox user argument
+    #opt = parser.add_argument(
+    #                          '-s',
+    #                          '--sandbox'
+    #)
     args = parser.parse_args()
     logging.info("-------- [SCRIPT ARGUMENTS] --------")
     if args.mode == 't':
@@ -185,8 +187,8 @@ if __name__ == '__main__':
     key_exceptions = {'Kansas': 'Kansas, United States', 'North Carolina': 'North Carolina, United States',
             'Georgia': 'Georgia, United States', 'Washington': 'Washington (state)'}
     # add conditional argument to argparse to make required to add sandbox user if test mode
-    #test_data = [['User:'+args.sandbox+'/sandbox', '555555', '50', '11th']]
-    # to be used for testing
+    # and remove your username from test_data param
+    test_data = [['User:Sasan-CDS/sandbox', '555555', '50', '11th']]
     num_of_edits = 0
     site = pywikibot.Site('en', 'wikipedia') 
     repo = site.data_repository()
@@ -235,6 +237,7 @@ if __name__ == '__main__':
                                 logging.info('Number of maximum edits({}) has been reached and bot will not perform any further updates') 
                         else:
                             update_page_items(page, text, api_val, template_values, year, reference, comment)
+                            logging.info('Number of edits: {}'.format(num_of_edits))
                     else:
                         logging.info('Nothing to update')
                 else:
