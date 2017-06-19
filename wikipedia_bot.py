@@ -1,4 +1,4 @@
-#!pi_values/usr/bin/python3.5
+#!/usr/bin/python3.5
  
 #Author:        Sasan Bahadaran
 #Date:          5/1/17
@@ -39,7 +39,7 @@ def search_for_page_items(template, infobox_keys):
         for key in item_keys:
             if template.has(key):
                 template_values[item] = str(template.get(key))
-                print('KEY - {} Found'.format(key))
+                logging.info('KEY - {} Found'.format(key))
                 break
     return template_values
             
@@ -78,12 +78,12 @@ def compare_page_items(api_values, page_values, year):
             api_value += ' ('+year+' est)'
             # remove reference, commas, and any <br> tags
             current_val = current_val[:current_val.find('<ref')].replace(',', '').replace('<br>', ' ')
-        print('KEY: {} | EXISTING VALUE: {} | NEW VALUE: {}'.format(key.split(' - ')[0], current_val, api_value))
+        logging.info('KEY: {} | EXISTING VALUE: {} | NEW VALUE: {}'.format(key.split(' - ')[0], current_val, api_value))
         if current_val == api_value:
-            print('VALUES MATCH')
+            logging.info('VALUES MATCH')
             page_values = removekey(page_values, key)
         else:
-            print('VALUES DO NOT MATCH')
+            logging.info('VALUES DO NOT MATCH')
     return page_values
 
 def update_page_items(page, text, api_values, page_values, year, reference, comment):
@@ -100,7 +100,7 @@ def update_page_items(page, text, api_values, page_values, year, reference, comm
         new_value = ' '.join(val.split('=', 1)[0].split())+' = '+new_value
         # add new line tag
         new_value += '\n'
-        print('FULL EXISTING VALUE: {}\nFULL REPLACEMENT VALUE: {}'.format(val, new_value))
+        logging.info('FULL EXISTING VALUE: {}\nFULL REPLACEMENT VALUE: {}'.format(val, new_value))
         if not args.debug:
             text = text.replace(val, new_value)
             page.text = text
@@ -113,7 +113,15 @@ def update_page_items(page, text, api_values, page_values, year, reference, comm
 
 if __name__ == '__main__':
     scriptpath = os.path.dirname(os.path.abspath(__file__))
-   
+ 
+    #logging configuration
+    logging.basicConfig(
+                        filename='logs/wikipedia_bot-log-'+time.strftime('%Y%m%d'),
+                        level=logging.INFO,
+                        format='%(asctime)s - %(name)s - %(levelname)s -%(message)s',
+                        datefmt='%Y%m%d %H:%M:%S'
+    )
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
                         '-m',
@@ -192,14 +200,14 @@ if __name__ == '__main__':
         metric_values = test_data
         year = '2016'
     if metric_values:
-        print('Number of items in API Response: {}'.format(len(metric_values)))
+        logging.info('Number of items in API Response: {}'.format(len(metric_values)))
         for i, api_val in enumerate(metric_values):
-            print('API item: {}'.format(api_val))
+            logging.info('API item: {}'.format(api_val))
             key = api_val[0].split(',')[0]
-            print('[STATE: {}]'.format(key))
+            logging.info('[STATE: {}]'.format(key))
             if key in key_exceptions:
                 key = key_exceptions[key]
-                print('Key exception found. new key: {}'.format(key))
+                logging.info('Key exception found. new key: {}'.format(key))
             if api_val[code_check_pos] in exceptions:
                 metric_values.pop(i)
             page = pywikibot.Page(site, key)
@@ -228,10 +236,10 @@ if __name__ == '__main__':
                         else:
                             update_page_items(page, text, api_val, template_values, year, reference, comment)
                     else:
-                        print('Nothing to update')
+                        logging.info('Nothing to update')
                 else:
-                    print('No items were found in this page!!!')
+                    logging.info('No items were found in this page!!!')
             else:
-                print('NO RESULTS FOR: {}'.format(key))
+                logging.info('NO RESULTS FOR: {}'.format(key))
     else:
         sys.exit('NO RESULTS FROM THE CENSUS API FOR ANY YEARS.  EXAMINE FOR OTHER ISSUES!')

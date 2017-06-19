@@ -198,7 +198,7 @@ if __name__ == '__main__':
 
     #logging configuration
     logging.basicConfig(
-                        filename='logs/censusbot-log-'+time.strftime('%Y%m%d'),
+                        filename='logs/wikidata_bot-log-'+time.strftime('%Y%m%d'),
                         level=logging.INFO,
                         format='%(asctime)s - %(name)s - %(levelname)s -%(message)s',
                         datefmt='%Y%m%d %H:%M:%S'
