@@ -106,8 +106,10 @@ def update_page_items(page, text, api_values, page_values, year, reference, comm
             page.text = text
             page.save(comment)
             print('Page Successfully Updated')
+            num_of_edits += 1
         else:
             print('DEBUG - Page value will be updated')
+            num_of_edits += 1
 
 if __name__ == '__main__':
     scriptpath = os.path.dirname(os.path.abspath(__file__))
@@ -129,6 +131,17 @@ if __name__ == '__main__':
                         default=False,
                         help='Pass this flag to set mode of bot to debug (means there will be no actual changes to the Wiki)'
     )
+    parser.add_argument(
+                        '-n',
+                        '--numedits',
+                        required=False,
+                        type=int,
+                        help='Pass this flag to control the number of edits that the bot makes.'
+    )
+    opt = parser.add_argument(
+                              '-s',
+                              '--sandbox'
+    )
     args = parser.parse_args()
     logging.info("-------- [SCRIPT ARGUMENTS] --------")
     if args.mode == 't':
@@ -137,6 +150,8 @@ if __name__ == '__main__':
         logging.info('      BOT MODE: PROD')
     if args.debug:
         logging.info('      !RUNNING IN DEBUG MODE!')
+    if args.numedits:
+        logging.info('      NUMBER OF EDITS:{}'.format(args.numedits))
     logging.info("----------- [JOB START] -----------")
 
     # can be used later for config file
@@ -161,10 +176,10 @@ if __name__ == '__main__':
     exceptions = ['11', '72']
     key_exceptions = {'Kansas': 'Kansas, United States', 'North Carolina': 'North Carolina, United States',
             'Georgia': 'Georgia, United States', 'Washington': 'Washington (state)'}
-    #test_data = [['User:Sasan-CDS/sandbox', '555555', '50', '11th']]
-    test_data = [['New York', '19745289', '36', '4th'], ['Illinois', '12801539', '17', '5th'], 
-            ['Pennsylvania', '12784227', '42', '6th'], ['Ohio', '11614373', '39', '7th'],
-            ['Georgia', '10310371', '13', '8th']]
+    # add conditional argument to argparse to make required to add sandbox user if test mode
+    #test_data = [['User:'+args.sandbox+'/sandbox', '555555', '50', '11th']]
+    # to be used for testing
+    num_of_edits = 0
     site = pywikibot.Site('en', 'wikipedia') 
     repo = site.data_repository()
     
@@ -204,7 +219,14 @@ if __name__ == '__main__':
                     #compare page items
                     template_values = compare_page_items(api_val, template_values, year)
                     if template_values:
-                        update_page_items(page, text, api_val, template_values, year, reference, comment)
+                        if args.numedits: 
+                            if num_of_edits < args.numedits:
+                                update_page_items(page, text, api_val, template_values, year, reference, comment)
+                                logging.info('Number of edits: {}'.format(num_of_edits))
+                            else:
+                                logging.info('Number of maximum edits({}) has been reached and bot will not perform any further updates') 
+                        else:
+                            update_page_items(page, text, api_val, template_values, year, reference, comment)
                     else:
                         print('Nothing to update')
                 else:
