@@ -147,11 +147,6 @@ if __name__ == '__main__':
                         type=int,
                         help='Pass this flag to control the number of edits that the bot makes.'
     )
-    # placeholder for sandbox user argument
-    #opt = parser.add_argument(
-    #                          '-s',
-    #                          '--sandbox'
-    #)
     args = parser.parse_args()
     logging.info("-------- [SCRIPT ARGUMENTS] --------")
     if args.mode == 't':
@@ -186,8 +181,6 @@ if __name__ == '__main__':
     exceptions = ['11', '72']
     key_exceptions = {'Kansas': 'Kansas, United States', 'North Carolina': 'North Carolina, United States',
             'Georgia': 'Georgia, United States', 'Washington': 'Washington (state)'}
-    # add conditional argument to argparse to make required to add sandbox user if test mode
-    # and remove your username from test_data param
     test_data = [['User:Sasan-CDS/sandbox', '555555', '50', '11th']]
     num_of_edits = 0
     site = pywikibot.Site('en', 'wikipedia') 
