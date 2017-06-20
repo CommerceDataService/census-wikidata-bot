@@ -75,7 +75,7 @@ def compare_page_items(api_values, page_values, year):
         api_value = api_values[pos]
         if key == 'total_pop - 1':
             # format value correctly for comparison with page content
-            api_value += ' ('+year+' est)'
+            api_value += ' ('+year+' est.)'
             # remove reference, commas, and any <br> tags
             current_val = current_val[:current_val.find('<ref')].replace(',', '').replace('<br>', ' ')
         logging.info('KEY: {} | EXISTING VALUE: {} | NEW VALUE: {}'.format(key.split(' - ')[0], current_val, api_value))
