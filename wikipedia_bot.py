@@ -86,31 +86,41 @@ def compare_page_items(api_values, page_values, year):
             logging.info('VALUES DO NOT MATCH')
     return page_values
 
-def update_page_items(page, text, api_values, page_values, year, reference, comment):
+def create_comment(comment_vals):
+    comment = ''
+    beg = 'Updating'
+    end = 'with latest data from US Census Bureau.'
+    comment = beg + 'and'.join(comment_vals) + end
+    print(comment)
+    return comment
+
+def update_page_items(page, text, api_values, page_values, year, reference):
     global num_of_edits
+    comment_vals = []
     for key, val in page_values.items(): 
         pos = int(key.split(' - ')[1])
         new_value = api_values[pos]
-        # add reference for total population
+        # add reference and create comment
         if key == 'total_pop - 1':
-            new_value = '{:,}'.format(int(new_value))+' ('+year+' est)'+reference
+            new_value = '{:,}'.format(int(new_value))+' ('+year+' est.)'+reference
+            comment_vals.append(' total population ')
         else:
-            index = comment.find('with')
-            comment = comment[:index]+' and associated population rank '+comment[index:]
+            comment_vals.append(' population rank ')
         # add property tag
         new_value = ' '.join(val.split('=', 1)[0].split())+' = '+new_value
         # add new line tag
         new_value += '\n'
         logging.info('FULL EXISTING VALUE: {}\nFULL REPLACEMENT VALUE: {}'.format(val, new_value))
-        if not args.debug:
-            text = text.replace(val, new_value)
-            page.text = text
-            page.save(comment)
-            logging.info('Page Successfully Updated')
-            num_of_edits += 1
-        else:
-            logging.info('DEBUG - Page value will be updated')
-            num_of_edits += 1
+        text = text.replace(val, new_value)
+    comment = create_comment(comment_vals)
+    if not args.debug:
+         page.text = text
+         page.save(comment)
+         logging.info('Page Successfully Updated')
+         num_of_edits += 1
+    else:
+         logging.info('DEBUG - Page value will be updated')
+         num_of_edits += 1
 
 if __name__ == '__main__':
     scriptpath = os.path.dirname(os.path.abspath(__file__))
@@ -174,7 +184,6 @@ if __name__ == '__main__':
     reference = '<ref name=PopHousingEst>{{{{cite web|url=https://www.census.gov/programs-surveys/popest.html|title=Population'\
                         ' and Housing Unit Estimates |date={} |accessdate={}|publisher=[[U.S. Census Bureau]]}}}}</ref>'\
                         .format(datetime.datetime.today().strftime('%B %-d, %Y'), datetime.datetime.today().strftime('%B %-d, %Y'))
-    comment = 'Updating population estimate with latest data from Census Bureau'
     # position of state code in API response
     code_check_pos = 2
     #DC and PR
@@ -229,7 +238,7 @@ if __name__ == '__main__':
                             else:
                                 logging.info('Number of maximum edits({}) has been reached and bot will not perform any further updates') 
                         else:
-                            update_page_items(page, text, api_val, template_values, year, reference, comment)
+                            update_page_items(page, text, api_val, template_values, year, reference)
                             logging.info('Number of edits: {}'.format(num_of_edits))
                     else:
                         logging.info('Nothing to update')
