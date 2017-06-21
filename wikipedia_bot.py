@@ -91,7 +91,6 @@ def create_comment(comment_vals):
     beg = 'Updating'
     end = 'with latest data from US Census Bureau.'
     comment = beg + 'and'.join(comment_vals) + end
-    print(comment)
     return comment
 
 def update_page_items(page, text, api_values, page_values, year, reference):
@@ -233,7 +232,7 @@ if __name__ == '__main__':
                     if template_values:
                         if args.numedits: 
                             if num_of_edits < args.numedits:
-                                update_page_items(page, text, api_val, template_values, year, reference, comment)
+                                update_page_items(page, text, api_val, template_values, year, reference)
                                 logging.info('Number of edits: {}'.format(num_of_edits))
                             else:
                                 logging.info('Number of maximum edits({}) has been reached and bot will not perform any further updates') 
