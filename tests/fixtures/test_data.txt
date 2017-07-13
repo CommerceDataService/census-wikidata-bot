@@ -1,0 +1,66 @@
+{{Infobox U.S. state
+|Fullname        = State of North Carolina
+|Flag            = Flag of North Carolina.svg
+|Name            = North Carolina
+|Seal            = Seal of North Carolina.svg
+|Flaglink        = [[Flag of North Carolina|Flag]]
+|Nickname        = Old North State; {{nowrap|[[Tar Heel]] State}}
+|Motto           = [[Esse quam videri]]: {{nowrap|"To be, rather than to seem" (official);}} {{nowrap|[[First in flight|First in Flight]]}}: {{nowrap|First in Freedom}}
+|Map             = North Carolina in United States.svg
+|OfficialLang    = English<ref>{{cite web|page=§ 145-12|title=State language|quotation=(a)Purpose. English is the common language of the people of the United States of America and the State of North Carolina. This section is intended to preserve, protect and strengthen the English language, and not to supersede any of the rights guaranteed to the people by the Constitution of the United States or the Constitution of North Carolina. (b) English as the Official Language of North Carolina. English is the official language of the State of North Carolina.|url=ftp://www.ncga.state.nc.us/EnactedLegislation/Statutes/HTML/ByArticle/Chapter_145/Article_%20.html|website=Ncga.state.nc.cus|accessdate=May 23, 2016}}</ref>
+|Languages       = <small>As of 2000</small>
+*English 90.70%
+*Spanish 6.18%<ref>{{cite web |url= http://www.mla.org/map_data_results&SRVY_YEAR=2005&geo=state&state_id=37&county_id=&mode=geographic&lang_id=&zip=&place_id=&cty_id=&region_id=&division_id=&ll=&ea=n&order=&a=n&pc=1 |title= North Carolina |publisher= [[Modern Language Association]] |accessdate=August 11, 2012}}</ref>
+|Demonym         = North Carolinian (official);<br />[[Tar Heel]] (colloquial)
+|LargestCity     = [[Charlotte, North Carolina|Charlotte]]
+|Capital         = [[Raleigh, North Carolina|Raleigh]]
+|LargestMetro    = [[Charlotte metropolitan area|Charlotte metro area]]
+|AreaRank        = 28th
+|TotalAreaUS     = 53,819
+|TotalArea       = 139,390
+|WidthUS         = 170
+|Width           = 261
+|LengthUS        = 560<ref>{{cite web |date=May 8, 2006 |url=http://www.secretary.state.nc.us/kidspg/geog.htm |title=North Carolina Climate and Geography |work=NC Kids Page |publisher=North Carolina Department of the Secretary of State |accessdate=November 7, 2006}}</ref>
+|Length          = 901
+|PCWater         = 9.5
+|Latitude        = 33° 50′ N to 36° 35′ N
+|Longitude       = 75° 28′ W to 84° 19′ W
+|PopRank = 1st
+|2000Pop = 100,000
+|MedianHouseholdIncome = $50,797 <ref>{{cite web|url=http://kff.org/other/state-indicator/median-annual-income/?currentTimeframe=0|work=The Henry J. Kaiser Family Foundation|title=Median Annual Household Income|accessdate=December 9, 2016}}</ref>
+
+|2000DensityUS   = 212.2
+|2000Density     = 83.1
+|DensityRank     = 15th
+|IncomeRank      = 38th
+|HighestPoint    = [[Mount Mitchell (North Carolina)|Mount Mitchell]]<ref name=USGS>{{cite web|url=http://egsc.usgs.gov/isb/pubs/booklets/elvadist/elvadist.html |title=Elevations and Distances in the United States |publisher=[[United States Geological Survey]] |year=2001 |accessdate=October 24, 2011 |deadurl=yes |archiveurl=https://web.archive.org/web/20111015012701/http://egsc.usgs.gov/isb/pubs/booklets/elvadist/elvadist.html |archivedate=October 15, 2011 |df=mdy-all }}</ref><ref name=NAVD88>Elevation adjusted to [[North American Vertical Datum of 1988]].</ref>
+|HighestElevUS    = 6,684
+|HighestElev      = 2037
+|MeanElevUS       = 700
+|MeanElev         = 210
+|LowestPoint      = Atlantic Ocean<ref name=USGS/>
+|LowestElev       = 0
+|LowestElevUS     = 0
+|Former          = Province of North Carolina
+|AdmittanceDate  = November 21, 1789
+|AdmittanceOrder = 12th
+|Governor        = [[Roy Cooper]] ([[Democratic Party (United States)|D]])
+|Lieutenant Governor = [[Dan Forest]] ([[Republican Party (United States)|R]])
+|Legislature     = [[North Carolina General Assembly|General Assembly]]
+|Upperhouse      = [[North Carolina Senate|Senate]]
+|Lowerhouse      = [[North Carolina House of Representatives|House of Representatives]]
+|Senators        = [[Richard Burr]] (R)<br />[[Thom Tillis]] (R)
+|Representative=10 Republicans<br />3 Democrats
+|TimeZone        = [[Eastern Time Zone (North America)|Eastern]]: [[Coordinated Universal Time|UTC]] [[Eastern Time Zone|-5]]/[[Eastern Daylight Time|-4]]
+|ISOCode          = US-NC
+|PostalAbbreviation = NC
+|TradAbbreviation   = N.C.
+|Website          = www.nc.gov
+|LargestCounty   = [[Wake County, North Carolina|Wake]]
+|Old Capital     = [[New Bern 1766, Hillsborogh NC, 1754]]
+|LandAreaUS      = 48,711
+|LandArea        = 126,161
+|WaterArea       = 5,108
+|ElectoralVotes   = 15
+}}
+
