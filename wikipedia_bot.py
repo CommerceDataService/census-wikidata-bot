@@ -37,9 +37,6 @@ def search_for_page_items(template, infobox_keys):
     for item, item_keys in infobox_keys.items():
         for key in item_keys:
             if template.has(key):
-                # added this condition for cases in which both properties are present
-                #if key == 'population_total' and template.has('population_est'):
-                #    key = ' population_est'
                 template_values[item] = str(template.get(key))
                 logging.info('KEY - {} Found'.format(key))
                 break
@@ -78,11 +75,10 @@ def compare_page_items(api_values, page_values, year):
             api_value = year
         else:
             api_value = api_values[pos]
-        #if key == 'total_pop - 1':
-            # format value correctly for comparison with page content
-            #api_value += ' ('+year+' est.)'
-            # remove reference, commas, and any <br> tags
-            #current_val = current_val[:current_val.find('<ref')].replace(',', '').replace('<br>', ' ')
+        if 'state' in for_var:
+            if key == 'total_pop - 1':
+                # format value correctly for comparison with page content
+                api_value += ' ('+year+' est.)'
         if '<ref' in current_val:
             current_val = current_val[:current_val.find('<ref')]
         current_val = current_val.replace(',', '').replace('<br>', ' ')
@@ -179,9 +175,6 @@ if __name__ == '__main__':
         logging.info('      NUMBER OF EDITS:{}'.format(args.numedits))
     logging.info("----------- [JOB START] -----------")
 
-    # can be used later for config file
-    #data_file = os.path.join(scriptpath, "data", "data.json")
-
     # state set of configs
     #get_var = 'GEONAME,POP'
     #for_var = 'state:*'
@@ -226,13 +219,14 @@ if __name__ == '__main__':
     relevant_templates = ['Infobox settlement', 'Infobox U.S. county']
     key_exceptions = {'Winchester city, Virginia': 'Winchester, Virginia', 'Waynesboro city, Virginia': 'Waynesboro, Virginia',
             'Virginia Beach city, Virginia': 'Virginia Beach, Virginia', 'Suffolk city, Virginia': 'Suffolk, Virginia',
-            'St. Louis city, Missouri': 'St. Louis, Missouri',
-            'Salem city, Virginia': 'Salem, Virginia', 'Roanoke city, Virginia': 'Roanoke, Virginia',
-            'Radford city, Virginia': 'Radford, Virginia', 'Portsmouth city, Virginia': 'Portsmouth, Virginia',
-            'Poquoson city, Virginia': 'Poquoson, Virginia', 'Newport News city, Virginia': 'Newport News, Virginia', 
-            'Manassas city, Virginia': 'Manassas, Virginia', 'Lynchburg city, Virginia': 'Lynchburg, Virginia', 'Lexington city, Virginia': 'Lexington, Virginia', 
-            'Franklin city, Virginia': 'Franklin, Virginia', 'Emporia city, Virginia': 'Emporia, Virginia', 'Covington city, Virginia': 'Covington, Virginia', 
-            'Buena Vista city, Virginia': 'Buena Vista, Virginia', 'Baltimore city, Maryland': 'Baltimore, Maryland', 'Alexandria city, Virginia': 'Alexandria, Virginia'
+            'St. Louis city, Missouri': 'St. Louis, Missouri','Salem city, Virginia': 'Salem, Virginia', 
+            'Roanoke city, Virginia': 'Roanoke, Virginia', 'Radford city, Virginia': 'Radford, Virginia', 
+            'Portsmouth city, Virginia': 'Portsmouth, Virginia', 'Poquoson city, Virginia': 'Poquoson, Virginia', 
+            'Newport News city, Virginia': 'Newport News, Virginia', 'Manassas city, Virginia': 'Manassas, Virginia', 
+            'Lynchburg city, Virginia': 'Lynchburg, Virginia', 'Lexington city, Virginia': 'Lexington, Virginia', 
+            'Franklin city, Virginia': 'Franklin, Virginia', 'Emporia city, Virginia': 'Emporia, Virginia', 
+            'Covington city, Virginia': 'Covington, Virginia', 'Buena Vista city, Virginia': 'Buena Vista, Virginia', 
+            'Baltimore city, Maryland': 'Baltimore, Maryland', 'Alexandria city, Virginia': 'Alexandria, Virginia'
             } 
     test_data = [['User:Sasan-CDS/sandbox', '555555', '50']]
 
