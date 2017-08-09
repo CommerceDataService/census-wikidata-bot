@@ -44,8 +44,8 @@ In order to log out of these wikis, you may run:
 
 ### Script Configuration
 
-#### app-config.ini
-This file should contain the API key that will be provided to you after registering with the Census Bureau.  In order to obtain a Census API key, refer to the following [page](http://api.census.gov/data/key_signup.html).  A sample file ('app_config.ini.sample') has been provided.
+#### app_config.ini
+This file should contain the API key that will be provided to you after registering with the Census Bureau.  In order to obtain a Census API key, refer to the [API documentation](http://api.census.gov/data/key_signup.html).  A sample file ([`app_config.ini.sample`](app_config.ini.sample)) has been provided.
 
 #### Data Configuration Files
 This application contains data configuration files that instruct bots on where and how to look for source data, as well as how to push that data to wikis.  These files are contained in the [`/data`](/data) directory.  These files are split up into Wikidata production and test cases.  [`data.json`](/data/data.json) is for the Wikidata [production site](https://www.wikidata.org/) and [`data_test.json`](/data/data_test.json) is for the [test site](https://test.wikidata.org) (*Note, currently, these files are not used for Wikipedia*).  Currently, these files are populated with initial configurations used for these bots, but you may change or add to them as needed.  These files are in JSON format, and the schema is defined in [`census_bot_data.schema.json`](/data/census_bot_data.schema.json).  
