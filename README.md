@@ -6,6 +6,16 @@ This suite of bots interact with [Wikidata](https://www.wikidata.org/wiki/Wikida
 
 ## Setup
 
+### Repository
+
+```
+pip install virtualenv
+cd /path/to/repository
+virtualenv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
 #### Accounts and Bot Approval
 In order to use these bots, you must create an account for each Wiki and receive bot approval in order to operate as a bot.  More information for Wikidata can be found [here](https://www.wikidata.org/wiki/Wikidata:Bots) and for Wikipedia [here](https://en.wikipedia.org/wiki/Wikipedia:Bots).
 
@@ -23,6 +33,10 @@ After the above files have been set up, you may run the login script (`login.py`
 `python login.py -all`
 
 If the script was successful, you should see messages that you have been logged in to each wiki you specified in your configuration.
+
+You can log into a specific account by specifying the language and family of your target:
+
+`python login.py -family:wikipedia -lang:en`
 
 In order to log out of these wikis, you may run:
 
