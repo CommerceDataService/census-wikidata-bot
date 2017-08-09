@@ -16,7 +16,6 @@ from util import config_funcs
 #current year and ending with 2013
 def get_census_values(api_url, get_var, for_var, api_key, year=datetime.datetime.today().year):
     try:
-        year = datetime.datetime.today().year
         while year >= 2013:
             payload = {'get': get_var, 'for': for_var, 'key': api_key}
             r = requests.get(api_url.replace('XXXX', str(year)), params=payload)
