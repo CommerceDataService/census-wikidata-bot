@@ -7,7 +7,6 @@ This suite of bots interact with [Wikidata](https://www.wikidata.org/wiki/Wikida
 ## Setup
 
 ### Repository
-
 ```
 pip install virtualenv
 cd /path/to/repository
@@ -16,18 +15,18 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-#### Accounts and Bot Approval
+### Accounts and Bot Approval
 In order to use these bots, you must create an account for each Wiki and receive bot approval in order to operate as a bot.  More information for Wikidata can be found [here](https://www.wikidata.org/wiki/Wikidata:Bots) and for Wikipedia [here](https://en.wikipedia.org/wiki/Wikipedia:Bots).
 
-#### Pywikibot User Configuration
+### Pywikibot User Configuration
 
-###### user-config.py
+#### user-config.py
 This file should contain the information that Pywikibot uses to log a user into a specified wiki.  You will include your user account information in this file.  A sample file (`user-config.py.sample`) has been provided to use.
 
-###### user-password.py
+#### user-password.py
 This file should contain passwords for your bots.  This is optional.  A sample file (`user-password.py.sample`) has been provided to use.
 
-###### Logging in
+### Logging in
 After the above files have been set up, you may run the login script (`login.py`) to login in to all of your wiki accounts.  In order to do this, you may run the following:
 
 `python login.py -all`
@@ -42,27 +41,29 @@ In order to log out of these wikis, you may run:
 
 `python login.py -all -logout`
 
-###### app-config.ini
+### Script Configuration
+
+#### app-config.ini
 This file should contain the API key that will be provided to you after registering with the Census Bureau.  In order to obtain a Census API key, refer to the following [page](http://api.census.gov/data/key_signup.html).  A sample file ('app_config.ini.sample') has been provided.
 
-###### Data Configuration files
+#### Data Configuration Files
 This application contains data configuration files that instruct bots on where and how to look for source data, as well as how to push that data to wikis.  These files are contained in the `/data` directory.  These files are split up into Wikidata production and test cases.  `data.json` is for the Wikidata production [site](https://www.wikidata.org/) and `data_test.json` is for the test [site](test.wikidata.org) (*Note, currently, these files are not used for Wikipedia since that bot is still in development*).  Currently, these files are populated with initial configurations used for these bots, but you may change or add to them as needed.  These files are in JSON format, and the schema is defined in `census_bot_data.schema.json`.  
 
 Lastly, `reference.json` contains definitions of wiki property tags and what that property represents in order to make understanding of the tags defined in the main data files easier.
 
-## Running The Bots
+## Running the Bots
 Once all setup has been completed, the Wikidata bot can be run by executing `wikidata_bot.py` and the Wikipedia bot can be run by executing `wikipedia_bot.py`.
 
-### Modes of execution
+### Modes of Execution
 The wikidata and wikipedia bots can be run using different modes.  More information about argument usage is available by using  `--help`.  The following modes are available for running the Wikidata bot are available:
 
-###### Test
+#### Test
 The `-m t` argument can be passed to the script in order to run it in test mode.  For the wikidata bot, this causes the bot to communicate with the [test site](test.wikidata.org) instead of the [production site](https://www.wikidata.org/).  In order to have pages to test against, you must create test pages and make sure you are referring to the proper values in your configuration file.  For wikipedia, this causes to use the test data defined in the test_data parameter in the code.
 
-###### Production
+#### Production
 The `-m p` argument can be passed to the script in order to run it in production mode (i.e., use the [main site](https://www.wikidata.org) for wikidata and use API data for wikipedia).
 
-###### Debug
+#### Debug
 The `-d` argument can be passed to the script in order to run it in debug mode.  This will allow you to run the script on test or production without actually making any edits.
 
 ### Logging
