@@ -33,11 +33,11 @@ def get_census_values(api_url, get_var, for_var, api_key, year=datetime.datetime
 
 def search_for_page_items(template, infobox_keys):
     template_values = {}
-    for item, item_keys in infobox_keys.items():
-        for key in item_keys:
-            if template.has(key):
-                template_values[item] = str(template.get(key))
-                logging.info('KEY - {} Found'.format(key))
+    for key, wiki_properties in infobox_keys.items():
+        for prop_name in wiki_properties:
+            if template.has(prop_name):
+                template_values[key] = str(template.get(prop_name))
+                logging.info('KEY - {} Found'.format(prop_name))
                 break
     return template_values
 
