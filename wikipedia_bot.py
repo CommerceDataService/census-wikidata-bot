@@ -179,8 +179,10 @@ if __name__ == '__main__':
     #for_var = 'state:*'
     #api_url = 'http://api.census.gov/data/XXXX/pep/population'
     #api_key = config_funcs.getAppConfigParam('API', 'key')
-    ## the keys in this dict represent the 'property - position of corresponding value in api response
-    ## and the values represent the possible keys in which this property is listed under in the template
+
+    ## This dict represents the properties we will be searching for within the infoboxes. Some
+    ## properties are represented by multiple infobox keys. An entry in the dict is formatted as:
+    ## {prop_description} - {value position within api_values}: [{list of infobox key names}]
     #infobox_keys = {'total_pop - 1': ['population_total', '2010Pop', '2000Pop', 'population_estimate'],
     #        'rank - 3': ['PopRank']
     #        }
@@ -200,11 +202,13 @@ if __name__ == '__main__':
     for_var = 'county:*'
     api_url = 'http://api.census.gov/data/XXXX/pep/population'
     api_key = config_funcs.getAppConfigParam('API', 'key')
-    # the keys in this dict represent the 'property - position of corresponding value in api response
-    # and the values represent the possible keys in which this property is listed under in the template
+
+    # This dict represents the properties we will be searching for within the infoboxes. Some
+    # properties are represented by multiple infobox keys. An entry in the dict is formatted as:
+    # {prop_description} - {value position within api_values}: [{list of infobox key names}]
     infobox_keys = {'population - 1': ['pop', 'population_total', 'population'],
             'population_estimate - 1': ['population_est'],
-            'population_as_of - 99': ['popularion_as_of'],
+            'population_as_of - 99': ['population_as_of'],
             'population_est_as_of - 99': ['pop_est_as_of', 'census_estimate_yr', 'census estimate yr', 'population_date',
                 'census yr']
             }
