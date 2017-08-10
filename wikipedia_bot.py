@@ -283,15 +283,11 @@ if __name__ == '__main__':
                     #compare page items
                     template_values = compare_page_items(api_val, template_values, year)
                     if template_values:
-                        if args.numedits: 
-                            if num_of_edits < args.numedits:
-                                #update_page_items(page, text, api_val, template_values, year, reference)
-                                logging.info('Number of edits: {}'.format(num_of_edits))
-                            else:
-                                logging.info('Number of maximum edits({}) has been reached and bot will not perform any further updates') 
-                        else:
-                            update_page_items(page, text, api_val, template_values, year, reference)
-                            logging.info('Number of edits: {}'.format(num_of_edits))
+                        update_page_items(page, text, api_val, template_values, year, reference)
+                        logging.info('Number of edits: {}'.format(num_of_edits))
+                        if args.numedits and num_of_edits >= args.numedits:
+                            logging.info('Number of maximum edits({}) has been reached and bot will not perform any further updates'.format(args.numedits))
+                            break
                     else:
                         logging.info('Nothing to update')
                 else:
