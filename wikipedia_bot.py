@@ -1,5 +1,5 @@
 #!/usr/bin/python3.5
- 
+
 #Author:        Sasan Bahadaran
 #Date:          5/1/17
 #Organization:  Commerce Data Service
@@ -49,8 +49,8 @@ def population_rank_sort(pop_list):
         if val[2] in ['11', '72']:
             non_states.append(pop_list.pop(i))
     pop_list = sorted(pop_list, key=lambda x: int(x[1]), reverse=True)
-    ordinal = lambda n: "%d%s" % (n,"tsnrhtdd"[(n//10%10!=1)*(n%10<4)*n%10::4]) 
-    for i,val in enumerate(pop_list):
+    ordinal = lambda n: "%d%s" % (n,"tsnrhtdd"[(n//10%10!=1)*(n%10<4)*n%10::4])
+    for i, val in enumerate(pop_list):
         val.append(ordinal(i+1))
     #leaving this commented out for now because we decided to exclude these from
     #state processing
@@ -99,7 +99,7 @@ def create_comment(comment_vals):
 def update_page_items(page, text, api_values, page_values, year, reference):
     global num_of_edits
     comment_vals = []
-    for key, val in page_values.items(): 
+    for key, val in page_values.items():
         pos = int(key.split(' - ')[1])
         if pos == 99:
             new_value = year
@@ -120,16 +120,16 @@ def update_page_items(page, text, api_values, page_values, year, reference):
         text = text.replace(val, new_value)
     comment = create_comment(comment_vals)
     if not args.debug:
-         page.text = text
-         page.save(comment)
-         logging.info('Page Successfully Updated')
+        page.text = text
+        page.save(comment)
+        logging.info('Page Successfully Updated')
     else:
-         logging.info('DEBUG - Page value will be updated')
+        logging.info('DEBUG - Page value will be updated')
     num_of_edits += 1
 
 if __name__ == '__main__':
     scriptpath = os.path.dirname(os.path.abspath(__file__))
- 
+
     #logging configuration
     logging.basicConfig(
                         filename='logs/wikipedia_bot-log-'+time.strftime('%Y%m%d'),
@@ -183,9 +183,10 @@ if __name__ == '__main__':
     ## This dict represents the properties we will be searching for within the infoboxes. Some
     ## properties are represented by multiple infobox keys. An entry in the dict is formatted as:
     ## {prop_description} - {value position within api_values}: [{list of infobox key names}]
-    #infobox_keys = {'total_pop - 1': ['population_total', '2010Pop', '2000Pop', 'population_estimate'],
-    #        'rank - 3': ['PopRank']
-    #        }
+    # infobox_keys = {
+    #     'total_pop - 1': ['population_total', '2010Pop', '2000Pop', 'population_estimate'],
+    #     'rank - 3': ['PopRank']
+    # }
     #reference = '<ref name=PopHousingEst>{{{{cite web|url=https://www.census.gov/programs-surveys/popest.html|title=Population'\
     #                    ' and Housing Unit Estimates |date={} |accessdate={}|publisher=[[U.S. Census Bureau]]}}}}</ref>'\
     #                    .format(datetime.datetime.today().strftime('%B %-d, %Y'), datetime.datetime.today().strftime('%B %-d, %Y'))
@@ -206,12 +207,13 @@ if __name__ == '__main__':
     # This dict represents the properties we will be searching for within the infoboxes. Some
     # properties are represented by multiple infobox keys. An entry in the dict is formatted as:
     # {prop_description} - {value position within api_values}: [{list of infobox key names}]
-    infobox_keys = {'population - 1': ['pop', 'population_total', 'population'],
-            'population_estimate - 1': ['population_est'],
-            'population_as_of - 99': ['population_as_of'],
-            'population_est_as_of - 99': ['pop_est_as_of', 'census_estimate_yr', 'census estimate yr', 'population_date',
-                'census yr']
-            }
+    infobox_keys = {
+        'population - 1': ['pop', 'population_total', 'population'],
+        'population_estimate - 1': ['population_est'],
+        'population_as_of - 99': ['population_as_of'],
+        'population_est_as_of - 99': ['pop_est_as_of', 'census_estimate_yr', 'census estimate yr',
+                                      'population_date', 'census yr']
+    }
     reference = '<ref name=PopHousingEst>{{{{cite web|url=https://www.census.gov/programs-surveys/popest.html|title=Population'\
                         ' and Housing Unit Estimates |date={} |accessdate={}|publisher=[[U.S. Census Bureau]]}}}}</ref>'\
                         .format(datetime.datetime.today().strftime('%B %-d, %Y'), datetime.datetime.today().strftime('%B %-d, %Y'))
