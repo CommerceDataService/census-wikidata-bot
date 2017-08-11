@@ -127,7 +127,7 @@ def update_page_items(page, text, api_values, page_values, year, reference):
             comment_vals.append(' total population ')
 
         # add property tag
-        new_value = ' '.join(val.split('=', 1)[0].split())+' = '+new_value
+        new_value = val.split('=', 1)[0] + '= ' + new_value
         # add new line tag
         new_value += '\n'
         logging.info('FULL EXISTING VALUE: {}\nFULL REPLACEMENT VALUE: {}'.format(val, new_value))
