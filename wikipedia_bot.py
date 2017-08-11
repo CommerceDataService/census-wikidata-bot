@@ -41,20 +41,19 @@ def search_for_page_items(template, infobox_keys):
                 break
     return template_values
 
-#sort items by population (exluding PR and DC)
+#sort items by population
 def population_rank_sort(pop_list):
     non_states = []
     for i, val in enumerate(pop_list):
-        #11 and 72 are the FIPS 5-2 codes for PR and DC
+        # PR and DC should not be counted within the 50 states for rank
         if val[2] in ['11', '72']:
             non_states.append(pop_list.pop(i))
     pop_list = sorted(pop_list, key=lambda x: int(x[1]), reverse=True)
+
+    # via https://stackoverflow.com/a/20007730
     ordinal = lambda n: "%d%s" % (n,"tsnrhtdd"[(n//10%10!=1)*(n%10<4)*n%10::4])
     for i, val in enumerate(pop_list):
         val.append(ordinal(i+1))
-    #leaving this commented out for now because we decided to exclude these from
-    #state processing
-    #pop_list.extend(non_states)
     return pop_list
 
 #remove value from dict and return copy rather than mutated dict
@@ -67,26 +66,33 @@ def removekey(d, key):
 # *note - this function does not compare references, only values
 def compare_page_items(api_values, page_values, year):
     for key, val in page_values.items():
-        pos = int(key.split(' - ')[1])
         # extact value and normalize whitespace
         current_val = ' '.join(val.split('=', 1)[1].split())
-        if pos == 99:
+        if key.startswith('pop'):
+            api_value = api_values[1]
+        elif key.startswith('rank'):
+            api_value = api_values[3]
+        elif key.startswith('year'):
             api_value = year
-        else:
-            api_value = api_values[pos]
-        if 'state' in for_var:
-            if key == 'total_pop - 1':
-                # format value correctly for comparison with page content
-                api_value += ' ('+year+' est.)'
+        elif key.startswith('ref'):
+            continue # don't compare ref property
+
+        # standardize text to compare statistics
+        if 'state' in for_var and key.startswith('pop'):
+            api_value += ' ('+year+' est.)'
         if '<ref' in current_val:
             current_val = current_val[:current_val.find('<ref')]
         current_val = current_val.replace(',', '').replace('<br>', ' ')
-        logging.info('KEY: {} | EXISTING VALUE: {} | NEW VALUE: {}'.format(key.split(' - ')[0], current_val, api_value))
+
+        logging.info('KEY: {} | EXISTING VALUE: {} | NEW VALUE: {}'.format(key, current_val, api_value))
         if current_val == api_value:
             logging.info('VALUES MATCH')
             page_values = removekey(page_values, key)
         else:
             logging.info('VALUES DO NOT MATCH')
+    # empty dict if only the ref property is left
+    if len(page_values) == 1 and next(iter(page_values)).startswith('ref'):
+        page_values.clear()
     return page_values
 
 def create_comment(comment_vals):
@@ -100,18 +106,26 @@ def update_page_items(page, text, api_values, page_values, year, reference):
     global num_of_edits
     comment_vals = []
     for key, val in page_values.items():
-        pos = int(key.split(' - ')[1])
-        if pos == 99:
+        if key.startswith('pop'):
+            new_value = api_values[1]
+        elif key.startswith('rank'):
+            new_value = api_values[3]
+        elif key.startswith('year'):
             new_value = year
-        else:
-            #new_value = api_values[pos]
-            new_value = '{:,}'.format(int(api_values[pos]))
-        # add reference and create comment
-        if key == 'total_pop - 1':
-            new_value = '{:,}'.format(int(new_value))+' ('+year+' est.)'+reference
-            comment_vals.append(' total population ')
-        else:
+        elif key.startswith('ref'):
+            new_value = reference
+
+        # format text to match wiki conventions
+        if 'state' in for_var and key.startswith('pop'):
+            new_value += ' (' + year + ' est.)'
+        if key.endswith('with_ref'):
+            new_value += reference
+
+        if key.startswith('rank'):
             comment_vals.append(' population rank ')
+        elif key.startswith('pop'):
+            comment_vals.append(' total population ')
+
         # add property tag
         new_value = ' '.join(val.split('=', 1)[0].split())+' = '+new_value
         # add new line tag
@@ -182,10 +196,12 @@ if __name__ == '__main__':
 
     ## This dict represents the properties we will be searching for within the infoboxes. Some
     ## properties are represented by multiple infobox keys. An entry in the dict is formatted as:
-    ## {prop_description} - {value position within api_values}: [{list of infobox key names}]
+    ## {prop_description} : [{list of infobox key names}]
+    ## 'with_ref' indicates the value should be appeneded with a wiki-style citation
+    ## 'alt' indicates these keys should be ignored if a non-alt version is also found
     # infobox_keys = {
-    #     'total_pop - 1': ['population_total', '2010Pop', '2000Pop', 'population_estimate'],
-    #     'rank - 3': ['PopRank']
+    #     'pop_with_ref': ['population_total', '2010Pop', '2000Pop', 'population_estimate'],
+    #     'rank': ['PopRank']
     # }
     #reference = '<ref name=PopHousingEst>{{{{cite web|url=https://www.census.gov/programs-surveys/popest.html|title=Population'\
     #                    ' and Housing Unit Estimates |date={} |accessdate={}|publisher=[[U.S. Census Bureau]]}}}}</ref>'\
@@ -206,13 +222,17 @@ if __name__ == '__main__':
 
     # This dict represents the properties we will be searching for within the infoboxes. Some
     # properties are represented by multiple infobox keys. An entry in the dict is formatted as:
-    # {prop_description} - {value position within api_values}: [{list of infobox key names}]
+    # {prop_description} : [{list of infobox key names}]
+    # 'with_ref' indicates the value should be appeneded with a wiki-style citation
+    # 'alt' indicates these keys should be ignored if a non-alt version is also found
     infobox_keys = {
-        'population - 1': ['pop', 'population_total', 'population'],
-        'population_estimate - 1': ['population_est'],
-        'population_as_of - 99': ['population_as_of'],
-        'population_est_as_of - 99': ['pop_est_as_of', 'census_estimate_yr', 'census estimate yr',
-                                      'population_date', 'census yr']
+        'pop': ['population_est'],
+        'pop_with_ref': ['pop'],
+        'pop_alt': ['population_total'],
+        'year': ['pop_est_as_of', 'census_estimate_yr', 'census estimate yr'],
+        'year_alt': ['population_as_of', 'census yr'],
+        'ref': ['pop_est_footnotes'],
+        'ref_alt': ['population_footnotes']
     }
     reference = '<ref name=PopHousingEst>{{{{cite web|url=https://www.census.gov/programs-surveys/popest.html|title=Population'\
                         ' and Housing Unit Estimates |date={} |accessdate={}|publisher=[[U.S. Census Bureau]]}}}}</ref>'\
@@ -221,6 +241,7 @@ if __name__ == '__main__':
     code_check_pos = 2
     #DC and PR
     exceptions = ['11', '72']
+    # 'Geobox Settlement' and 'Geobox Region' would match, but are not used for these counties
     relevant_templates = ['Infobox settlement', 'Infobox U.S. county']
     key_exceptions = {'Winchester city, Virginia': 'Winchester, Virginia', 'Waynesboro city, Virginia': 'Waynesboro, Virginia',
             'Virginia Beach city, Virginia': 'Virginia Beach, Virginia', 'Suffolk city, Virginia': 'Suffolk, Virginia',
@@ -245,7 +266,8 @@ if __name__ == '__main__':
         metric_values, year = get_census_values(api_url, get_var, for_var, api_key)
         #remove header
         metric_values.pop(0)
-        #metric_values = population_rank_sort(metric_values)
+        if 'state' in for_var:
+            metric_values = population_rank_sort(metric_values)
     else:
         metric_values = test_data
         year = '2016'
@@ -279,14 +301,26 @@ if __name__ == '__main__':
                     else:
                         template_values = search_for_page_items(template, infobox_keys)
                 if template_values:
-                    if 'population_estimate - 1' in template_values:
+                    # Given the Wiki keys found, determine which we will update
+                    if 'pop' in template_values or 'pop_with_ref' in template_values:
                         logging.info('Ignoring population_total and population_as_of properties due to presence of population_estimate property')
-                        del template_values['population - 1']
-                        if 'population_as_of - 99' in template_values:
-                            del template_values['population_as_of - 99']
-                        elif 'population_est_as_of - 99' in template_values:
-                            del template_values['population_est_as_of - 99']
-                    #compare page items
+                        template_values.pop('pop_alt', None)
+                        template_values.pop('year_alt', None)
+                    if 'pop_with_ref' in template_values:
+                        logging.info('Ignoring reference properties because reference will be included with population')
+                        template_values.pop('ref', None)
+                        template_values.pop('ref_alt', None)
+                    else:
+                        if 'pop' in template_values:
+                            logging.info('Ignoring population_footnotes')
+                            template_values.pop('ref_alt', None)
+                        elif 'pop_alt' in template_values:
+                            logging.info('Ignoring pop_est_footnotes')
+                            template_values.pop('ref', None)
+                        else:
+                            logging.warning('Unexpected combination of Wiki keys found. Unsure how to add wiki reference citation.')
+
+                    # Compare and update page items
                     template_values = compare_page_items(api_val, template_values, year)
                     if template_values:
                         update_page_items(page, text, api_val, template_values, year, reference)
