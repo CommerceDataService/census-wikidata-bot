@@ -210,6 +210,7 @@ if __name__ == '__main__':
     #code_check_pos = 2
     ##DC and PR
     #exceptions = ['11', '72']
+    #relevant_templates = [x.lower() for x in ['Infobox U.S. state', 'US state']]
     #key_exceptions = {'Kansas': 'Kansas, United States', 'North Carolina': 'North Carolina, United States',
     #        'Georgia': 'Georgia, United States', 'Washington': 'Washington (state)'}
     #test_data = [['User:Sasan-CDS/sandbox', '555555', '50', '11th']]
@@ -241,8 +242,8 @@ if __name__ == '__main__':
     code_check_pos = 2
     #DC and PR
     exceptions = ['11', '72']
-    # 'Geobox Settlement' and 'Geobox Region' would match, but are not used for these counties
-    relevant_templates = ['Infobox settlement', 'Infobox U.S. county']
+    # 'Geobox Settlement' and 'Geobox Region' would match, but are deprecated and we'll ignore for now
+    relevant_templates = [x.lower() for x in ['Infobox settlement', 'Infobox U.S. County', 'US County infobox']]
     key_exceptions = {'Winchester city, Virginia': 'Winchester, Virginia', 'Waynesboro city, Virginia': 'Waynesboro, Virginia',
             'Virginia Beach city, Virginia': 'Virginia Beach, Virginia', 'Suffolk city, Virginia': 'Suffolk, Virginia',
             'St. Louis city, Missouri': 'St. Louis, Missouri','Salem city, Virginia': 'Salem, Virginia', 
@@ -290,16 +291,17 @@ if __name__ == '__main__':
                     page = page.getRedirectTarget()
                 text = page.get(get_redirect=True)
                 code = mwparserfromhell.parse(text)
+
                 template_values = {}
                 template_found = False
                 for template in code.filter_templates():
-                    if template.name in relevant_templates:
+                    # Some of the template names returned by the parser contain comments,
+                    # but these occur after the Infobox name. So we need to check if the
+                    # beginning of the template name matches one of our targets
+                    if template.name.lower().startswith(tuple(relevant_templates)):
                         template_found = True
-                    # if correct template is found, break out of loop
-                    if template_values:
-                        break
-                    else:
                         template_values = search_for_page_items(template, infobox_keys)
+                        break
                 if template_values:
                     # Given the Wiki keys found, determine which we will update
                     if 'pop' in template_values or 'pop_with_ref' in template_values:
@@ -331,13 +333,13 @@ if __name__ == '__main__':
                     else:
                         logging.info('Nothing to update')
                 else:
+                    num_of_not_founds += 1
                     if template_found:
                         logging.warning('No items were found in this page!!!')
                     else:
                         logging.warning('None of the relevant templates were found on this page!!!')
-                    num_of_not_founds += 1
             else:
-                logging.warning('NO RESULTS FOR: {}'.format(key))
+                logging.warning('NO PAGE FOUND FOR: {}'.format(key))
                 num_of_pages_not_found += 1
         logging.info('TOTAL NUMBER OF EDITS: {}'.format(num_of_edits))
         logging.info('TOTAL NUMBER OF PAGES WHERE NOTHING FOUND: {}'.format(num_of_not_founds))
