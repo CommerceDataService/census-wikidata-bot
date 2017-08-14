@@ -166,6 +166,8 @@ if __name__ == '__main__':
         logging.info('      BOT MODE: PROD')
     if args.debug:
         logging.info('      !RUNNING IN DEBUG MODE!')
+    else:
+        print("**** THIS WILL UPDATE WIKIPEDIA ****")
     if args.numedits:
         logging.info('      NUMBER OF EDITS:{}'.format(args.numedits))
     logging.info("----------- [JOB START] -----------")
