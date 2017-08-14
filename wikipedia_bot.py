@@ -244,6 +244,10 @@ if __name__ == '__main__':
             if api_val[code_check_pos] in exceptions:
                 logging.info('Item being skipped due to configuration settings')
                 continue
+            if not api_val[1].isdecimal():
+                logging.info('Skipping item. Element is not a population value: {}'.format(api_val[1]))
+                continue
+
             page = pywikibot.Page(site, key)
             if page.exists():
                 if page.isRedirectPage():
