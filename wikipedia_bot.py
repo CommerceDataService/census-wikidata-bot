@@ -10,7 +10,7 @@ import pywikibot, json, os, requests, argparse, logging, time, json, sys
 import mwparserfromhell, datetime, math
 from pywikibot.data import api
 from util import config_funcs
-
+from difflib import unified_diff
 
 #get values from CENSUS API.  Return response from first year with valid response starting with
 #current year and ending with 2013
@@ -31,16 +31,6 @@ def get_census_values(api_url, get_var, for_var, api_key, year=datetime.datetime
     except IOError as err:
         logging.error('IOError: {}'.format(err))
 
-def search_for_page_items(template, infobox_keys):
-    template_values = {}
-    for key, wiki_properties in infobox_keys.items():
-        for prop_name in wiki_properties:
-            if template.has(prop_name):
-                template_values[key] = str(template.get(prop_name))
-                logging.info('KEY - {} Found'.format(prop_name))
-                break
-    return template_values
-
 #sort items by population
 def population_rank_sort(pop_list):
     non_states = []
@@ -56,90 +46,82 @@ def population_rank_sort(pop_list):
         val.append(ordinal(i+1))
     return pop_list
 
-#remove value from dict and return copy rather than mutated dict
-def removekey(d, key):
-    r = dict(d)
-    del r[key]
-    return r
+# Determine if the provided template name matches a given list of
+# potential matches
+def template_name_matches(name, targets):
+    if type(targets) is not list: targets = [targets]
+    targets = [x.lower() for x in targets]
 
-# compare value from page to value from API to check for discrepancies
-# *note - this function does not compare references, only values
-def compare_page_items(api_values, page_values, year):
-    for key, val in page_values.items():
-        # extact value and normalize whitespace
-        current_val = ' '.join(val.split('=', 1)[1].split())
-        if key.startswith('pop'):
-            api_value = api_values[1]
-        elif key.startswith('rank'):
-            api_value = api_values[3]
-        elif key.startswith('year'):
-            api_value = year
-        elif key.startswith('ref'):
-            continue # don't compare ref property
+    # Some of the template names returned by the parser contain comments,
+    # but these occur after the Infobox name. So we need to check if the
+    # beginning of the template name matches one of our targets
+    #
+    # Note: WikiCode objects have a 'matches' method, but in testing this
+    # returns inconsistent results with our template names
+    # https://mwparserfromhell.readthedocs.io/en/latest/api/mwparserfromhell.html#mwparserfromhell.wikicode.Wikicode.matches
+    return name.lower().startswith(tuple(targets))
 
-        # standardize text to compare statistics
-        if 'state' in for_var and key.startswith('pop'):
-            api_value += ' ('+year+' est.)'
-        if '<ref' in current_val:
-            current_val = current_val[:current_val.find('<ref')]
-        current_val = current_val.replace(',', '').replace('<br>', ' ')
-
-        logging.info('KEY: {} | EXISTING VALUE: {} | NEW VALUE: {}'.format(key, current_val, api_value))
-        if current_val == api_value:
-            logging.info('VALUES MATCH')
-            page_values = removekey(page_values, key)
-        else:
-            logging.info('VALUES DO NOT MATCH')
-    # empty dict if only the ref property is left
-    if len(page_values) == 1 and next(iter(page_values)).startswith('ref'):
-        page_values.clear()
-    return page_values
-
-def create_comment(comment_vals):
-    comment = ''
-    beg = 'Updating'
-    end = 'with latest data from US Census Bureau.'
-    comment = beg + 'and'.join(comment_vals) + end
-    return comment
-
-def update_page_items(page, text, api_values, page_values, year, reference):
-    global num_of_edits
-    comment_vals = []
-    for key, val in page_values.items():
-        if key.startswith('pop'):
-            new_value = api_values[1]
-        elif key.startswith('rank'):
-            new_value = api_values[3]
-        elif key.startswith('year'):
-            new_value = year
-        elif key.startswith('ref'):
-            new_value = reference
-
-        # format text to match wiki conventions
-        if 'state' in for_var and key.startswith('pop'):
-            new_value += ' (' + year + ' est.)'
-        if key.endswith('with_ref'):
-            new_value += reference
-
-        if key.startswith('rank'):
-            comment_vals.append(' population rank ')
-        elif key.startswith('pop'):
-            comment_vals.append(' total population ')
-
-        # add property tag
-        new_value = val.split('=', 1)[0] + '= ' + new_value
-        # add new line tag
-        new_value += '\n'
-        logging.info('FULL EXISTING VALUE: {}\nFULL REPLACEMENT VALUE: {}'.format(val, new_value))
-        text = text.replace(val, new_value)
-    comment = create_comment(comment_vals)
-    if not args.debug:
-        page.text = text
-        page.save(comment)
-        logging.info('Page Successfully Updated')
+# Given a template, update the properties to provide the current
+# Census values. This involves determining if the values need
+# to be updated and if properties need to be added/removed.
+def update_template(template, api_val, year, reference):
+    # The changes that need to be made are very specific to
+    # the template being used, so we'll address each of those
+    # cases specifically
+    #
+    # Template API:
+    # https://mwparserfromhell.readthedocs.io/en/latest/api/mwparserfromhell.nodes.html#module-mwparserfromhell.nodes.template
+    made_edit = False
+    if template_name_matches(template.name, ['Infobox settlement']):
+        # https://en.wikipedia.org/wiki/Template:Infobox_settlement
+        if(
+            not template.has('population_est') or
+            clean_wiki_param(template.get('population_est').value) != api_val[1]
+        ):
+            # population_total doesn't impact the display of population_est
+            template.add('population_est', api_val[1], before='population_total')
+            template.add('pop_est_as_of', year, before='population_est')
+            template.add('pop_est_footnotes', reference, before='population_est')
+            made_edit = True
+    elif template_name_matches(template.name, ['Infobox U.S. County', 'US County infobox']):
+        # https://en.wikipedia.org/wiki/Template:Infobox_U.S._county
+        # 'census est yr' is only used as long as 'census yr' is not present
+        current = clean_wiki_param(template.get('pop').value)
+        if current != api_val[1]:
+            template.add('pop', api_val[1] + reference)
+            template.add('census estimate yr', year, before='pop')
+            if template.has('census yr'):
+                template.remove('census yr')
+            if template.has('census_estimate_yr'):
+                template.remove('census_estimate_yr')
+            made_edit = True
+    elif template_name_matches(template.name, ['Infobox U.S. state', 'US state']):
+        # https://en.wikipedia.org/wiki/Template:Infobox_U.S._state
+        # Each of these properties is used inconsistently but accopmlishes
+        # the same thing
+        for prop in ['population_total', '2010Pop', '2000Pop', 'population_estimate']:
+            if template.has(prop):
+                current = clean_wiki_param(template.get(prop).value)
+                new_pop = api_val[1] + ' (' + year + ' est.)'
+                if current != new_pop or str(template.get('PopRank').value.strip()) != api_val[3]:
+                    template.add(prop, new_pop + reference)
+                    template.add('PopRank', api_val[3], before=prop)
+                    made_edit = True
+                break
     else:
-        logging.info('DEBUG - Page value will be updated')
-    num_of_edits += 1
+        logging.warning('Template name match not found!!!')
+
+    return str(template), made_edit
+
+# Translate the wiki parameter into a raw value that we can compare against
+def clean_wiki_param(param):
+    return str(param).split('<ref', 1)[0].replace(',', '').replace('<br>', ' ').strip()
+
+# Generate a git-style diff to compare changes in the wikicode
+def generate_diff(old_text, new_text):
+    diff = unified_diff(old_text.splitlines(keepends=True), new_text.splitlines(keepends=True))
+    diff = list(diff)
+    return ''.join(diff)
 
 if __name__ == '__main__':
     scriptpath = os.path.dirname(os.path.abspath(__file__))
@@ -194,15 +176,6 @@ if __name__ == '__main__':
     #api_url = 'http://api.census.gov/data/XXXX/pep/population'
     #api_key = config_funcs.getAppConfigParam('API', 'key')
 
-    ## This dict represents the properties we will be searching for within the infoboxes. Some
-    ## properties are represented by multiple infobox keys. An entry in the dict is formatted as:
-    ## {prop_description} : [{list of infobox key names}]
-    ## 'with_ref' indicates the value should be appeneded with a wiki-style citation
-    ## 'alt' indicates these keys should be ignored if a non-alt version is also found
-    # infobox_keys = {
-    #     'pop_with_ref': ['population_total', '2010Pop', '2000Pop', 'population_estimate'],
-    #     'rank': ['PopRank']
-    # }
     #reference = '<ref name=PopHousingEst>{{{{cite web|url=https://www.census.gov/programs-surveys/popest.html|title=Population'\
     #                    ' and Housing Unit Estimates |date={} |accessdate={}|publisher=[[U.S. Census Bureau]]}}}}</ref>'\
     #                    .format(datetime.datetime.today().strftime('%B %-d, %Y'), datetime.datetime.today().strftime('%B %-d, %Y'))
@@ -210,7 +183,7 @@ if __name__ == '__main__':
     #code_check_pos = 2
     ##DC and PR
     #exceptions = ['11', '72']
-    #relevant_templates = [x.lower() for x in ['Infobox U.S. state', 'US state']]
+    #relevant_templates = ['Infobox U.S. state', 'US state']
     #key_exceptions = {'Kansas': 'Kansas, United States', 'North Carolina': 'North Carolina, United States',
     #        'Georgia': 'Georgia, United States', 'Washington': 'Washington (state)'}
     #test_data = [['User:Sasan-CDS/sandbox', '555555', '50', '11th']]
@@ -221,20 +194,6 @@ if __name__ == '__main__':
     api_url = 'http://api.census.gov/data/XXXX/pep/population'
     api_key = config_funcs.getAppConfigParam('API', 'key')
 
-    # This dict represents the properties we will be searching for within the infoboxes. Some
-    # properties are represented by multiple infobox keys. An entry in the dict is formatted as:
-    # {prop_description} : [{list of infobox key names}]
-    # 'with_ref' indicates the value should be appeneded with a wiki-style citation
-    # 'alt' indicates these keys should be ignored if a non-alt version is also found
-    infobox_keys = {
-        'pop': ['population_est'],
-        'pop_with_ref': ['pop'],
-        'pop_alt': ['population_total'],
-        'year': ['pop_est_as_of', 'census_estimate_yr', 'census estimate yr'],
-        'year_alt': ['population_as_of', 'census yr'],
-        'ref': ['pop_est_footnotes'],
-        'ref_alt': ['population_footnotes']
-    }
     reference = '<ref name=PopHousingEst>{{{{cite web|url=https://www.census.gov/programs-surveys/popest.html|title=Population'\
                         ' and Housing Unit Estimates |date={} |accessdate={}|publisher=[[U.S. Census Bureau]]}}}}</ref>'\
                         .format(datetime.datetime.today().strftime('%B %-d, %Y'), datetime.datetime.today().strftime('%B %-d, %Y'))
@@ -243,7 +202,7 @@ if __name__ == '__main__':
     #DC and PR
     exceptions = ['11', '72']
     # 'Geobox Settlement' and 'Geobox Region' would match, but are deprecated and we'll ignore for now
-    relevant_templates = [x.lower() for x in ['Infobox settlement', 'Infobox U.S. County', 'US County infobox']]
+    relevant_templates = ['Infobox settlement', 'Infobox U.S. County', 'US County infobox']
     key_exceptions = {'Winchester city, Virginia': 'Winchester, Virginia', 'Waynesboro city, Virginia': 'Waynesboro, Virginia',
             'Virginia Beach city, Virginia': 'Virginia Beach, Virginia', 'Suffolk city, Virginia': 'Suffolk, Virginia',
             'St. Louis city, Missouri': 'St. Louis, Missouri','Salem city, Virginia': 'Salem, Virginia', 
@@ -292,52 +251,32 @@ if __name__ == '__main__':
                 text = page.get(get_redirect=True)
                 code = mwparserfromhell.parse(text)
 
-                template_values = {}
-                template_found = False
+                infobox_template = {}
                 for template in code.filter_templates():
-                    # Some of the template names returned by the parser contain comments,
-                    # but these occur after the Infobox name. So we need to check if the
-                    # beginning of the template name matches one of our targets
-                    if template.name.lower().startswith(tuple(relevant_templates)):
-                        template_found = True
-                        template_values = search_for_page_items(template, infobox_keys)
+                    if template_name_matches(template.name, relevant_templates):
+                        infobox_template = template
                         break
-                if template_values:
-                    # Given the Wiki keys found, determine which we will update
-                    if 'pop' in template_values or 'pop_with_ref' in template_values:
-                        logging.info('Ignoring population_total and population_as_of properties due to presence of population_estimate property')
-                        template_values.pop('pop_alt', None)
-                        template_values.pop('year_alt', None)
-                    if 'pop_with_ref' in template_values:
-                        logging.info('Ignoring reference properties because reference will be included with population')
-                        template_values.pop('ref', None)
-                        template_values.pop('ref_alt', None)
-                    else:
-                        if 'pop' in template_values:
-                            logging.info('Ignoring population_footnotes')
-                            template_values.pop('ref_alt', None)
-                        elif 'pop_alt' in template_values:
-                            logging.info('Ignoring pop_est_footnotes')
-                            template_values.pop('ref', None)
+                if infobox_template:
+                    old_text = str(infobox_template)
+                    new_text, made_edit = update_template(infobox_template, api_val, year, reference)
+                    if made_edit:
+                        num_of_edits += 1
+                        logging.info('CHANGES TO SAVE:\n' + generate_diff(old_text, new_text))
+                        if not args.debug:
+                            page.text = text.replace(old_text, new_text)
+                            page.save('Updating population estimate with latest data from US Census Bureau.')
+                            logging.info('Page Successfully Updated')
                         else:
-                            logging.warning('Unexpected combination of Wiki keys found. Unsure how to add wiki reference citation.')
-
-                    # Compare and update page items
-                    template_values = compare_page_items(api_val, template_values, year)
-                    if template_values:
-                        update_page_items(page, text, api_val, template_values, year, reference)
+                            logging.info('DEBUG - Page value will be updated')
                         logging.info('Number of edits: {}'.format(num_of_edits))
                         if args.numedits and num_of_edits >= args.numedits:
                             logging.info('Number of maximum edits({}) has been reached and bot will not perform any further updates'.format(args.numedits))
                             break
                     else:
-                        logging.info('Nothing to update')
+                        logging.info('POPULATION MATCHES. No edit made.')
                 else:
+                    logging.warning('None of the relevant templates were found on this page!!!')
                     num_of_not_founds += 1
-                    if template_found:
-                        logging.warning('No items were found in this page!!!')
-                    else:
-                        logging.warning('None of the relevant templates were found on this page!!!')
             else:
                 logging.warning('NO PAGE FOUND FOR: {}'.format(key))
                 num_of_pages_not_found += 1
