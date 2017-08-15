@@ -215,15 +215,15 @@ if __name__ == '__main__':
             'Franklin city, Virginia': 'Franklin, Virginia', 'Emporia city, Virginia': 'Emporia, Virginia', 
             'Covington city, Virginia': 'Covington, Virginia', 'Buena Vista city, Virginia': 'Buena Vista, Virginia', 
             'Baltimore city, Maryland': 'Baltimore, Maryland', 'Alexandria city, Virginia': 'Alexandria, Virginia'
-            } 
+            }
     test_data = [['User:Sasan-CDS/sandbox', '555555', '50']]
 
     num_of_pages_not_found = 0
     num_of_not_founds = 0
     num_of_edits = 0
-    site = pywikibot.Site('en', 'wikipedia') 
+    site = pywikibot.Site('en', 'wikipedia')
     repo = site.data_repository()
-    
+
     if args.mode == 'p':
         metric_values, year = get_census_values(api_url, get_var, for_var, api_key)
         #remove header
@@ -274,6 +274,7 @@ if __name__ == '__main__':
                             logging.info('Page Successfully Updated')
                         else:
                             logging.info('DEBUG - Page value will be updated')
+
                         logging.info('Number of edits: {}'.format(num_of_edits))
                         if args.numedits and num_of_edits >= args.numedits:
                             logging.info('Number of maximum edits({}) has been reached and bot will not perform any further updates'.format(args.numedits))
