@@ -1,5 +1,5 @@
-pywikibot==3.0.20170521
-simplejson==3.10.0
-requests==2.12.3
-mwparserfromhell==0.4.4
+pywikibot==3.0.20170801
+simplejson==3.11.1
+requests==2.18.3
+mwparserfromhell==0.5
 nose==1.3.7
